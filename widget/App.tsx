@@ -5,21 +5,20 @@
  * Each tool includes a `_widget` field in structuredContent to identify itself.
  *
  * Showcases all SEP-1865 APIs:
- * - tools/call: Counter Widget
- * - ui/open-link: Weather Widget
- * - resources/read: Notes Widget
- * - ui/message: Chat Widget
+ * - tools/call: Tool Call Widget
+ * - ui/open-link: Open Link Widget
+ * - resources/read: Read Resource Widget
+ * - ui/message: Message Widget
  */
 
 import { useEffect } from "react";
 import { useApp } from "./hooks/useApp";
-import { CounterWidget } from "./widgets/CounterWidget";
-import { WeatherWidget } from "./widgets/WeatherWidget";
-import { NotesWidget } from "./widgets/NotesWidget";
-import { ChatWidget } from "./widgets/ChatWidget";
-import { cn } from "./lib/utils";
+import { ToolCallWidget } from "./widgets/ToolCallWidget";
+import { OpenLinkWidget } from "./widgets/OpenLinkWidget";
+import { ReadResourceWidget } from "./widgets/ReadResourceWidget";
+import { MessageWidget } from "./widgets/MessageWidget";
 
-type WidgetType = "counter" | "weather" | "notes" | "chat" | null;
+type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | null;
 
 export function App() {
   const {
@@ -74,29 +73,29 @@ export function App() {
 
   return (
     <div className="min-h-screen">
-      {widgetType === "counter" && (
-        <CounterWidget
+      {widgetType === "tool-call" && (
+        <ToolCallWidget
           toolInput={toolInput}
           toolResult={toolResult}
           callTool={callTool}
         />
       )}
-      {widgetType === "weather" && (
-        <WeatherWidget
+      {widgetType === "open-link" && (
+        <OpenLinkWidget
           toolInput={toolInput}
           toolResult={toolResult}
           openLink={openLink}
         />
       )}
-      {widgetType === "notes" && (
-        <NotesWidget
+      {widgetType === "read-resource" && (
+        <ReadResourceWidget
           toolInput={toolInput}
+          toolResult={toolResult}
           readResource={readResource}
-          callTool={callTool}
         />
       )}
-      {widgetType === "chat" && (
-        <ChatWidget sendMessage={sendMessage} />
+      {widgetType === "message" && (
+        <MessageWidget sendMessage={sendMessage} />
       )}
     </div>
   );

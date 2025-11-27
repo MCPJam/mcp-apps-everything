@@ -17,42 +17,25 @@ const RESOURCE_URI_META_KEY = "ui/resourceUri";
 // Session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
-// Sample notes data for demo
-const sampleNotes = [
+// Tips data for demo
+const tips = [
   {
-    id: "note-1",
-    title: "Welcome to MCP Apps",
-    content:
-      "This is a demo of MCP Apps (SEP-1865). MCP Apps enable rich, interactive UIs within MCP tool responses.",
-    createdAt: new Date("2024-01-15").toISOString(),
+    id: "what-is-mcp",
+    title: "What is MCP?",
+    content: "Model Context Protocol (MCP) is an open protocol that enables seamless integration between AI applications and external data sources. It provides a standardized way for AI models to access tools, resources, and prompts.",
+    emoji: "🔌",
   },
   {
-    id: "note-2",
-    title: "About SEP-1865",
-    content:
-      "SEP-1865 defines a protocol for embedding interactive HTML/JS widgets in MCP responses. It uses JSON-RPC 2.0 over postMessage for iframe communication.",
-    createdAt: new Date("2024-01-16").toISOString(),
+    id: "what-are-apps",
+    title: "What are MCP Apps?",
+    content: "MCP Apps (SEP-1865) extend MCP to deliver rich, interactive user interfaces. They enable servers to embed HTML widgets in tool responses, creating dynamic experiences beyond plain text.",
+    emoji: "✨",
   },
   {
-    id: "note-3",
-    title: "Available APIs",
-    content:
-      "• tools/call - Call other MCP tools\n• resources/read - Read MCP resources\n• ui/message - Send messages to chat\n• ui/open-link - Open external URLs\n• ui/size-change - Resize the widget",
-    createdAt: new Date("2024-01-17").toISOString(),
-  },
-  {
-    id: "note-4",
-    title: "Implementation Notes",
-    content:
-      "The widget communicates with the host via a double-iframe sandbox architecture. The outer sandbox proxy handles message validation and forwarding.",
-    createdAt: new Date("2024-01-18").toISOString(),
-  },
-  {
-    id: "note-5",
-    title: "Testing Tips",
-    content:
-      "Use MCPJam Inspector to test your MCP Apps. It provides full support for SEP-1865 including tool invocation, resource reads, and UI interactions.",
-    createdAt: new Date("2024-01-19").toISOString(),
+    id: "how-resources-work",
+    title: "How do Resources work?",
+    content: "Resources in MCP are identified by URIs. Widgets can read resources using the resources/read API, enabling dynamic data fetching from the server. This tip was loaded using that exact API!",
+    emoji: "📚",
   },
 ];
 
@@ -83,32 +66,21 @@ function createServer() {
   }));
 
   // =====================================
-  // DATA RESOURCES (notes:// scheme)
+  // DATA RESOURCES (tips:// scheme)
   // =====================================
 
-  // All notes list
-  server.resource("notes-all", "notes://all", { mimeType: "application/json" }, async () => ({
-    contents: [
-      {
-        uri: "notes://all",
-        mimeType: "application/json",
-        text: JSON.stringify(sampleNotes),
-      },
-    ],
-  }));
-
-  // Individual note resources
-  for (const note of sampleNotes) {
+  // Individual tip resources
+  for (const tip of tips) {
     server.resource(
-      `note-${note.id}`,
-      `notes://${note.id}`,
+      `tip-${tip.id}`,
+      `tips://${tip.id}`,
       { mimeType: "application/json" },
       async () => ({
         contents: [
           {
-            uri: `notes://${note.id}`,
+            uri: `tips://${tip.id}`,
             mimeType: "application/json",
-            text: JSON.stringify(note),
+            text: JSON.stringify(tip),
           },
         ],
       })
@@ -119,12 +91,12 @@ function createServer() {
   // TOOLS WITH UI (use registerTool for _meta)
   // =====================================
 
-  // Counter Tool - Demonstrates tools/call
+  // Tool Call Widget - Demonstrates tools/call
   server.registerTool(
-    "show-counter",
+    "tool-call",
     {
-      title: "Counter Widget",
-      description: "Shows an interactive counter widget that demonstrates the tools/call API",
+      title: "Tool Call Demo",
+      description: "Interactive counter that demonstrates the tools/call API",
       inputSchema: {
         count: z.number().default(0).describe("Initial count value"),
       },
@@ -134,20 +106,19 @@ function createServer() {
       content: [
         {
           type: "text",
-          text: `Counter widget initialized at ${count}. Click the buttons to increment/decrement using tools/call.`,
+          text: `Counter initialized at ${count}. Click buttons to call the increment tool.`,
         },
       ],
-      structuredContent: { _widget: "counter", count, timestamp: Date.now() },
+      structuredContent: { _widget: "tool-call", count, timestamp: Date.now() },
     })
   );
 
-  // Weather Tool - Demonstrates ui/open-link
+  // Open Link Widget - Demonstrates ui/open-link
   server.registerTool(
-    "show-weather",
+    "open-link",
     {
-      title: "Weather Widget",
-      description:
-        "Shows a weather widget that demonstrates the ui/open-link API for opening external URLs",
+      title: "Open Link Demo",
+      description: "Weather widget that demonstrates the ui/open-link API for opening external URLs",
       inputSchema: {
         location: z.string().default("San Francisco").describe("Location to show weather for"),
         temperature: z.number().optional().describe("Temperature in Celsius"),
@@ -173,69 +144,56 @@ function createServer() {
         content: [
           {
             type: "text",
-            text: `Weather for ${location}: ${weatherData.temperature}°C, ${weatherData.condition}. Click the links to open external weather services.`,
+            text: `Weather for ${location}: ${weatherData.temperature}°C, ${weatherData.condition}. Click links to open external services.`,
           },
         ],
-        structuredContent: { _widget: "weather", ...weatherData },
+        structuredContent: { _widget: "open-link", ...weatherData },
       };
     }
   );
 
-  // Notes Tool - Demonstrates resources/read
+  // Read Resource Widget - Demonstrates resources/read
   server.registerTool(
-    "show-notes",
+    "read-resource",
     {
-      title: "Notes Widget",
-      description:
-        "Shows a notes browser widget that demonstrates the resources/read API for reading MCP resources",
-      inputSchema: {
-        filter: z.string().optional().describe("Optional filter text for notes"),
-      },
+      title: "Read Resource Demo",
+      description: "Demonstrates the resources/read API for reading MCP resources",
+      inputSchema: {},
       _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
     },
-    async ({ filter }): Promise<CallToolResult> => {
-      const filteredNotes = filter
-        ? sampleNotes.filter(
-            (n) =>
-              n.title.toLowerCase().includes(filter.toLowerCase()) ||
-              n.content.toLowerCase().includes(filter.toLowerCase())
-          )
-        : sampleNotes;
-
+    async (): Promise<CallToolResult> => {
       return {
         content: [
           {
             type: "text",
-            text: `Found ${filteredNotes.length} notes. Use the widget to browse and read notes via resources/read.`,
+            text: `Ready to read resources. Click a topic to fetch it via resources/read.`,
           },
         ],
-        structuredContent: { _widget: "notes", notes: filteredNotes, filter: filter ?? null },
+        structuredContent: { 
+          _widget: "read-resource", 
+          availableTips: tips.map(t => ({ id: t.id, title: t.title, emoji: t.emoji }))
+        },
       };
     }
   );
 
-  // Chat Tool - Demonstrates ui/message
+  // Message Widget - Demonstrates ui/message
   server.registerTool(
-    "show-chat",
+    "message",
     {
-      title: "Chat Widget",
-      description:
-        "Shows a chat widget that demonstrates the ui/message API for sending messages to the chat",
-      inputSchema: {
-        prompt: z.string().optional().describe("Initial prompt or context"),
-      },
+      title: "Message Demo",
+      description: "Demonstrates the ui/message API for sending messages to the chat",
+      inputSchema: {},
       _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
     },
-    async ({ prompt }): Promise<CallToolResult> => ({
+    async (): Promise<CallToolResult> => ({
       content: [
         {
           type: "text",
-          text: prompt
-            ? `Chat widget ready with context: "${prompt}". Use the quick actions or type a custom message.`
-            : "Chat widget ready. Click quick actions or type a message to send via ui/message.",
+          text: "Ready to send messages. Type or click to send via ui/message.",
         },
       ],
-      structuredContent: { _widget: "chat", prompt: prompt ?? null, timestamp: Date.now() },
+      structuredContent: { _widget: "message" },
     })
   );
 
@@ -260,33 +218,6 @@ function createServer() {
     })
   );
 
-  // Create note tool
-  server.registerTool(
-    "create-note",
-    {
-      title: "Create Note",
-      description: "Create a new note",
-      inputSchema: {
-        title: z.string().describe("Note title"),
-        content: z.string().describe("Note content"),
-      },
-    },
-    async ({ title, content }): Promise<CallToolResult> => {
-      const newNote = {
-        id: `note-${Date.now()}`,
-        title,
-        content,
-        createdAt: new Date().toISOString(),
-      };
-      // In a real implementation, this would persist the note
-      sampleNotes.push(newNote);
-
-      return {
-        content: [{ type: "text", text: `Note "${title}" created successfully` }],
-        structuredContent: newNote,
-      };
-    }
-  );
 
   return server;
 }
@@ -343,19 +274,17 @@ app.listen(PORT, () => {
 ║  Endpoint: http://localhost:${PORT}/mcp                          ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Tools with UI:                                               ║
-║    • show-counter  - tools/call demo                          ║
-║    • show-weather  - ui/open-link demo                        ║
-║    • show-notes    - resources/read demo                      ║
-║    • show-chat     - ui/message demo                          ║
+║    • tool-call      - tools/call demo                         ║
+║    • open-link      - ui/open-link demo                       ║
+║    • read-resource  - resources/read demo                     ║
+║    • message        - ui/message demo                         ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Utility Tools:                                               ║
 ║    • increment     - Counter increment                        ║
-║    • create-note   - Note creation                            ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Resources:                                                   ║
 ║    • ui://main     - Widget HTML                              ║
-║    • notes://all   - All notes                                ║
-║    • notes://{id}  - Individual notes                         ║
+║    • tips://{id}   - Tips about MCP                           ║
 ╚═══════════════════════════════════════════════════════════════╝
   `);
 });

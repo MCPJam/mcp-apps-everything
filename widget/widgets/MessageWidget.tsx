@@ -1,5 +1,5 @@
 /**
- * Chat Widget - Demonstrates ui/message API
+ * Message Widget - Demonstrates ui/message API
  */
 
 import { useState } from "react";
@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, FileQuestion, Sparkles } from "lucide-react";
 
-interface ChatWidgetProps {
+interface MessageWidgetProps {
   sendMessage: (text: string) => Promise<void>;
 }
 
@@ -22,7 +22,7 @@ const quickActions = [
   { label: "Tell me a joke", message: "Tell me a funny joke about programming.", icon: Sparkles },
 ];
 
-export function ChatWidget({ sendMessage }: ChatWidgetProps) {
+export function MessageWidget({ sendMessage }: MessageWidgetProps) {
   const [customMessage, setCustomMessage] = useState("");
   const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
   const [sending, setSending] = useState(false);
@@ -115,3 +115,4 @@ export function ChatWidget({ sendMessage }: ChatWidgetProps) {
     </div>
   );
 }
+

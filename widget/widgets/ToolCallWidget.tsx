@@ -1,19 +1,19 @@
 /**
- * Counter Widget - Demonstrates tools/call API
+ * Tool Call Widget - Demonstrates tools/call API
  */
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import type { CallToolResult } from "../../shared/types";
 
-interface CounterWidgetProps {
+interface ToolCallWidgetProps {
   toolInput: { arguments: Record<string, unknown> } | null;
   toolResult: { structuredContent?: Record<string, unknown> } | null;
   callTool: (name: string, args: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
-export function CounterWidget({ toolInput, toolResult, callTool }: CounterWidgetProps) {
+export function ToolCallWidget({ toolInput, toolResult, callTool }: ToolCallWidgetProps) {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [lastChange, setLastChange] = useState<number | null>(null);
@@ -126,3 +126,4 @@ export function CounterWidget({ toolInput, toolResult, callTool }: CounterWidget
     </div>
   );
 }
+

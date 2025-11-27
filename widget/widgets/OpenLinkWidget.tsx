@@ -1,5 +1,5 @@
 /**
- * Weather Widget - Demonstrates ui/open-link API
+ * Open Link Widget - Demonstrates ui/open-link API
  */
 
 import { useState, useEffect } from "react";
@@ -14,23 +14,13 @@ interface WeatherData {
   wind: number;
 }
 
-interface WeatherWidgetProps {
+interface OpenLinkWidgetProps {
   toolInput: { arguments: Record<string, unknown> } | null;
   toolResult: { structuredContent?: Record<string, unknown> } | null;
   openLink: (url: string) => Promise<void>;
 }
 
-const conditionConfig: Record<string, { emoji: string }> = {
-  sunny: { emoji: "☀️" },
-  cloudy: { emoji: "☁️" },
-  rainy: { emoji: "🌧️" },
-  snowy: { emoji: "❄️" },
-  stormy: { emoji: "⛈️" },
-  windy: { emoji: "💨" },
-  default: { emoji: "🌤️" },
-};
-
-export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidgetProps) {
+export function OpenLinkWidget({ toolInput, toolResult, openLink }: OpenLinkWidgetProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [linkOpened, setLinkOpened] = useState<string | null>(null);
 
@@ -69,8 +59,6 @@ export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidget
       </div>
     );
   }
-
-  const config = conditionConfig[weather.condition.toLowerCase()] || conditionConfig.default;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
@@ -157,3 +145,4 @@ export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidget
     </div>
   );
 }
+
