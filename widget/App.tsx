@@ -17,6 +17,9 @@ import { CounterWidget } from "./widgets/CounterWidget";
 import { WeatherWidget } from "./widgets/WeatherWidget";
 import { NotesWidget } from "./widgets/NotesWidget";
 import { ChatWidget } from "./widgets/ChatWidget";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./components/ui/card";
+import { Badge } from "./components/ui/badge";
+import { cn } from "./lib/utils";
 
 type WidgetType = "counter" | "weather" | "notes" | "chat" | null;
 
@@ -55,22 +58,9 @@ export function App() {
   // Loading state
   if (!isConnected) {
     return (
-      <div
-        style={{
-          fontFamily: "system-ui, sans-serif",
-          padding: "2rem",
-          background: isDark ? "#1a1a1a" : "#fff",
-          color: isDark ? "#fff" : "#000",
-          minHeight: "100vh",
-          boxSizing: "border-box",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⏳</div>
-        <div>Connecting to host...</div>
+      <div className={cn("min-h-screen p-8 flex flex-col items-center justify-center", isDark && "dark")}>
+        <div className="text-4xl mb-4">&#x23F3;</div>
+        <div className="text-muted-foreground">Connecting to host...</div>
       </div>
     );
   }
@@ -78,45 +68,24 @@ export function App() {
   // No widget detected - show help
   if (!widgetType) {
     return (
-      <div
-        style={{
-          fontFamily: "system-ui, sans-serif",
-          padding: "1.5rem",
-          background: isDark ? "#1a1a1a" : "#fff",
-          color: isDark ? "#fff" : "#000",
-          minHeight: "100vh",
-          boxSizing: "border-box",
-        }}
-      >
-        <h2 style={{ margin: "0 0 1rem", fontSize: "1.2rem" }}>MCP Apps Demo</h2>
-        <p style={{ opacity: 0.7, marginBottom: "1.5rem" }}>
-          Waiting for tool result...
-        </p>
-        <div
-          style={{
-            background: isDark ? "#222" : "#f5f5f5",
-            padding: "1rem",
-            borderRadius: "8px",
-          }}
-        >
-          <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>
-            Available Tools:
-          </div>
-          <ul style={{ margin: 0, paddingLeft: "1.5rem", lineHeight: 1.8 }}>
-            <li>
-              <code>show-counter</code> - tools/call demo
-            </li>
-            <li>
-              <code>show-weather</code> - ui/open-link demo
-            </li>
-            <li>
-              <code>show-notes</code> - resources/read demo
-            </li>
-            <li>
-              <code>show-chat</code> - ui/message demo
-            </li>
-          </ul>
-        </div>
+      <div className={cn("min-h-screen p-6", isDark && "dark")}>
+        <Card>
+          <CardHeader>
+            <CardTitle>MCP Apps Demo</CardTitle>
+            <CardDescription>Waiting for tool result...</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              <div className="font-semibold text-sm">Available Tools:</div>
+              <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                <li><code className="bg-muted px-1 py-0.5 rounded text-xs">show-counter</code> - tools/call demo</li>
+                <li><code className="bg-muted px-1 py-0.5 rounded text-xs">show-weather</code> - ui/open-link demo</li>
+                <li><code className="bg-muted px-1 py-0.5 rounded text-xs">show-notes</code> - resources/read demo</li>
+                <li><code className="bg-muted px-1 py-0.5 rounded text-xs">show-chat</code> - ui/message demo</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -124,95 +93,55 @@ export function App() {
   const info = widgetInfo[widgetType];
 
   return (
-    <div
-      style={{
-        fontFamily: "system-ui, sans-serif",
-        padding: "1rem",
-        background: isDark ? "#1a1a1a" : "#fff",
-        color: isDark ? "#fff" : "#000",
-        minHeight: "100vh",
-        boxSizing: "border-box",
-      }}
-    >
-      {/* Header with API info */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1rem",
-          paddingBottom: "0.75rem",
-          borderBottom: `1px solid ${isDark ? "#333" : "#ddd"}`,
-        }}
-      >
-        <div>
-          <h2 style={{ margin: 0, fontSize: "1.1rem", textTransform: "capitalize" }}>
-            {widgetType} Widget
-          </h2>
-          <div style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.25rem" }}>
-            {info?.description}
+    <div className={cn("min-h-screen p-4", isDark && "dark")}>
+      <Card className="h-full">
+        {/* Header with API info */}
+        <CardHeader className="border-b pb-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <CardTitle className="capitalize">{widgetType} Widget</CardTitle>
+              <CardDescription>{info?.description}</CardDescription>
+            </div>
+            <Badge variant="secondary" className="font-mono text-xs">
+              {info?.api}
+            </Badge>
           </div>
-        </div>
-        <div
-          style={{
-            background: isDark ? "#2563eb" : "#3b82f6",
-            color: "#fff",
-            padding: "0.25rem 0.5rem",
-            borderRadius: "4px",
-            fontSize: "0.75rem",
-            fontFamily: "monospace",
-          }}
-        >
-          {info?.api}
-        </div>
-      </div>
+        </CardHeader>
 
-      {/* Widget Content */}
-      <div style={{ minHeight: "280px" }}>
-        {widgetType === "counter" && (
-          <CounterWidget
-            isDark={isDark}
-            toolInput={toolInput}
-            toolResult={toolResult}
-            callTool={callTool}
-          />
-        )}
-        {widgetType === "weather" && (
-          <WeatherWidget
-            isDark={isDark}
-            toolInput={toolInput}
-            toolResult={toolResult}
-            openLink={openLink}
-          />
-        )}
-        {widgetType === "notes" && (
-          <NotesWidget
-            isDark={isDark}
-            toolInput={toolInput}
-            readResource={readResource}
-            callTool={callTool}
-          />
-        )}
-        {widgetType === "chat" && (
-          <ChatWidget isDark={isDark} sendMessage={sendMessage} />
-        )}
-      </div>
+        {/* Widget Content */}
+        <CardContent className="min-h-[280px] pt-4">
+          {widgetType === "counter" && (
+            <CounterWidget
+              toolInput={toolInput}
+              toolResult={toolResult}
+              callTool={callTool}
+            />
+          )}
+          {widgetType === "weather" && (
+            <WeatherWidget
+              toolInput={toolInput}
+              toolResult={toolResult}
+              openLink={openLink}
+            />
+          )}
+          {widgetType === "notes" && (
+            <NotesWidget
+              toolInput={toolInput}
+              readResource={readResource}
+              callTool={callTool}
+            />
+          )}
+          {widgetType === "chat" && (
+            <ChatWidget sendMessage={sendMessage} />
+          )}
+        </CardContent>
 
-      {/* Footer with theme info */}
-      <div
-        style={{
-          marginTop: "1rem",
-          paddingTop: "0.75rem",
-          borderTop: `1px solid ${isDark ? "#333" : "#ddd"}`,
-          fontSize: "0.7rem",
-          opacity: 0.5,
-          display: "flex",
-          justifyContent: "space-between",
-        }}
-      >
-        <span>Theme: {theme}</span>
-        <span>Mode: {hostContext?.displayMode ?? "unknown"}</span>
-      </div>
+        {/* Footer with theme info */}
+        <CardFooter className="border-t pt-4 text-xs text-muted-foreground justify-between">
+          <span>Theme: {theme}</span>
+          <span>Mode: {hostContext?.displayMode ?? "unknown"}</span>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

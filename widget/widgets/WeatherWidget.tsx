@@ -8,6 +8,8 @@
  */
 
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { ExternalLink } from "lucide-react";
 
 interface WeatherData {
   location: string;
@@ -18,23 +20,22 @@ interface WeatherData {
 }
 
 interface WeatherWidgetProps {
-  isDark: boolean;
   toolInput: { arguments: Record<string, unknown> } | null;
   toolResult: { structuredContent?: Record<string, unknown> } | null;
   openLink: (url: string) => Promise<void>;
 }
 
 const weatherIcons: Record<string, string> = {
-  sunny: "☀️",
-  cloudy: "☁️",
-  rainy: "🌧️",
-  snowy: "❄️",
-  stormy: "⛈️",
-  windy: "💨",
-  default: "🌤️",
+  sunny: "sun",
+  cloudy: "cloud",
+  rainy: "cloud-rain",
+  snowy: "snowflake",
+  stormy: "cloud-lightning",
+  windy: "wind",
+  default: "cloud-sun",
 };
 
-export function WeatherWidget({ isDark, toolInput, toolResult, openLink }: WeatherWidgetProps) {
+export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidgetProps) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [linkOpened, setLinkOpened] = useState<string | null>(null);
 
@@ -68,108 +69,91 @@ export function WeatherWidget({ isDark, toolInput, toolResult, openLink }: Weath
     }
   };
 
-  const linkStyle = {
-    display: "inline-block",
-    padding: "0.4rem 0.8rem",
-    margin: "0.25rem",
-    background: isDark ? "#2563eb" : "#3b82f6",
-    color: "#fff",
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-    textDecoration: "none",
-    border: "none",
-  };
-
   if (!weather) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem", opacity: 0.6 }}>
+      <div className="text-center py-8 text-muted-foreground">
         Loading weather data...
       </div>
     );
   }
 
-  const icon = weatherIcons[weather.condition.toLowerCase()] || weatherIcons.default;
+  const conditionEmoji = {
+    sunny: "&#x2600;&#xFE0F;",
+    cloudy: "&#x2601;&#xFE0F;",
+    rainy: "&#x1F327;&#xFE0F;",
+    snowy: "&#x2744;&#xFE0F;",
+    stormy: "&#x26C8;&#xFE0F;",
+    windy: "&#x1F4A8;",
+    default: "&#x1F324;&#xFE0F;",
+  }[weather.condition.toLowerCase()] || "&#x1F324;&#xFE0F;";
 
   return (
     <div>
-      <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", opacity: 0.7 }}>
-        ui/open-link Demo
-      </h3>
+      <h3 className="text-sm text-muted-foreground mb-2">ui/open-link Demo</h3>
 
-      <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
-        <span style={{ fontSize: "3rem" }}>{icon}</span>
+      <div className="flex items-center gap-4 mb-4">
+        <span className="text-5xl" dangerouslySetInnerHTML={{ __html: conditionEmoji }} />
         <div>
-          <div style={{ fontSize: "2rem", fontWeight: "bold" }}>{weather.temperature}°C</div>
-          <div style={{ opacity: 0.8, textTransform: "capitalize" }}>{weather.condition}</div>
+          <div className="text-4xl font-bold">{weather.temperature}&#xB0;C</div>
+          <div className="text-muted-foreground capitalize">{weather.condition}</div>
         </div>
       </div>
 
-      <div style={{ fontSize: "1.2rem", marginBottom: "0.5rem" }}>
-        📍 {weather.location}
+      <div className="text-lg mb-2">
+        &#x1F4CD; {weather.location}
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: "0.5rem",
-          marginBottom: "1rem",
-          fontSize: "0.9rem",
-        }}
-      >
-        <div>💧 Humidity: {weather.humidity}%</div>
-        <div>💨 Wind: {weather.wind} km/h</div>
-      </div>
-
-      <div style={{ borderTop: `1px solid ${isDark ? "#444" : "#ddd"}`, paddingTop: "1rem" }}>
-        <div style={{ marginBottom: "0.5rem", fontWeight: "bold", fontSize: "0.9rem" }}>
-          Open External Links:
+      <div className="grid grid-cols-2 gap-2 mb-4 text-sm">
+        <div className="flex items-center gap-1">
+          <span>&#x1F4A7;</span> Humidity: {weather.humidity}%
         </div>
-        <div>
-          <button
+        <div className="flex items-center gap-1">
+          <span>&#x1F4A8;</span> Wind: {weather.wind} km/h
+        </div>
+      </div>
+
+      <div className="border-t pt-4">
+        <div className="font-semibold text-sm mb-3">Open External Links:</div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            size="sm"
             onClick={() =>
               handleOpenLink(
                 `https://www.google.com/search?q=weather+${encodeURIComponent(weather.location)}`,
                 "Google Weather"
               )
             }
-            style={linkStyle}
           >
-            🔍 Google Weather
-          </button>
-          <button
+            <ExternalLink className="size-3" />
+            Google Weather
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
             onClick={() =>
               handleOpenLink(
                 `https://www.accuweather.com/en/search-locations?query=${encodeURIComponent(weather.location)}`,
                 "AccuWeather"
               )
             }
-            style={linkStyle}
           >
-            🌡️ AccuWeather
-          </button>
-          <button
+            <ExternalLink className="size-3" />
+            AccuWeather
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
             onClick={() =>
               handleOpenLink(`https://www.windy.com/?${weather.location}`, "Windy.com")
             }
-            style={linkStyle}
           >
-            🌬️ Windy.com
-          </button>
+            <ExternalLink className="size-3" />
+            Windy.com
+          </Button>
         </div>
         {linkOpened && (
-          <div
-            style={{
-              marginTop: "0.5rem",
-              padding: "0.5rem",
-              background: isDark ? "#166534" : "#dcfce7",
-              color: isDark ? "#fff" : "#166534",
-              borderRadius: "4px",
-              fontSize: "0.85rem",
-            }}
-          >
-            ✓ Opened: {linkOpened}
+          <div className="mt-3 p-2 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-100 rounded-md text-sm">
+            &#x2713; Opened: {linkOpened}
           </div>
         )}
       </div>

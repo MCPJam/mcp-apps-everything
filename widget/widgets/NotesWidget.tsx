@@ -9,22 +9,24 @@
  */
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import type { ReadResourceResult, CallToolResult } from "../../shared/types";
 
 interface ResourceExplorerProps {
-  isDark: boolean;
   toolInput: { arguments: Record<string, unknown> } | null;
   readResource: (uri: string) => Promise<ReadResourceResult>;
   callTool?: (name: string, args: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
 const presetResources = [
-  { uri: "notes://all", label: "All Notes", icon: "📚" },
-  { uri: "notes://note-1", label: "Note #1", icon: "📄" },
-  { uri: "notes://note-2", label: "Note #2", icon: "📄" },
+  { uri: "notes://all", label: "All Notes", icon: "&#x1F4DA;" },
+  { uri: "notes://note-1", label: "Note #1", icon: "&#x1F4C4;" },
+  { uri: "notes://note-2", label: "Note #2", icon: "&#x1F4C4;" },
 ];
 
-export function NotesWidget({ isDark, readResource, callTool }: ResourceExplorerProps) {
+export function NotesWidget({ readResource, callTool }: ResourceExplorerProps) {
   const [uri, setUri] = useState("notes://all");
   const [response, setResponse] = useState<ReadResourceResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -75,21 +77,16 @@ export function NotesWidget({ isDark, readResource, callTool }: ResourceExplorer
       const data = JSON.parse(content.text || "");
       if (Array.isArray(data)) {
         return (
-          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+          <div className="space-y-2">
             {data.map((item, i) => (
               <div
                 key={i}
                 onClick={() => item.id && fetchResource(`notes://${item.id}`)}
-                style={{
-                  padding: "0.75rem",
-                  background: isDark ? "#333" : "#e5e5e5",
-                  borderRadius: "6px",
-                  cursor: item.id ? "pointer" : "default",
-                }}
+                className="p-3 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors"
               >
-                <div style={{ fontWeight: "bold" }}>{item.title || `Item ${i + 1}`}</div>
+                <div className="font-semibold">{item.title || `Item ${i + 1}`}</div>
                 {item.createdAt && (
-                  <div style={{ fontSize: "0.75rem", opacity: 0.6 }}>
+                  <div className="text-xs text-muted-foreground">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </div>
                 )}
@@ -100,157 +97,130 @@ export function NotesWidget({ isDark, readResource, callTool }: ResourceExplorer
       }
       // Single object
       return (
-        <div style={{ lineHeight: 1.6 }}>
-          {data.title && <div style={{ fontWeight: "bold", fontSize: "1.1rem", marginBottom: "0.5rem" }}>{data.title}</div>}
-          {data.content && <div style={{ whiteSpace: "pre-wrap" }}>{data.content}</div>}
+        <div className="leading-relaxed">
+          {data.title && (
+            <div className="font-semibold text-lg mb-2">{data.title}</div>
+          )}
+          {data.content && (
+            <div className="whitespace-pre-wrap">{data.content}</div>
+          )}
           {data.createdAt && (
-            <div style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem" }}>
+            <div className="text-xs text-muted-foreground mt-2">
               Created: {new Date(data.createdAt).toLocaleString()}
             </div>
           )}
         </div>
       );
     } catch {
-      return <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{content.text}</pre>;
+      return <pre className="whitespace-pre-wrap text-sm">{content.text}</pre>;
     }
   };
 
-  const inputStyle = {
-    padding: "0.5rem",
-    background: isDark ? "#222" : "#fff",
-    color: isDark ? "#fff" : "#000",
-    border: `1px solid ${isDark ? "#444" : "#ccc"}`,
-    borderRadius: "4px",
-    fontSize: "0.9rem",
-  };
-
-  const buttonStyle = (primary = false) => ({
-    padding: "0.5rem 0.75rem",
-    background: primary ? (isDark ? "#2563eb" : "#3b82f6") : isDark ? "#333" : "#eee",
-    color: primary ? "#fff" : isDark ? "#fff" : "#000",
-    border: `1px solid ${isDark ? "#555" : "#ccc"}`,
-    borderRadius: "4px",
-    cursor: "pointer",
-    fontSize: "0.85rem",
-  });
-
   return (
-    <div>
+    <div className="space-y-4">
       {/* Step 1: Enter URI */}
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
-          1️⃣ Enter a resource URI
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground mb-2">
+          1&#xFE0F;&#x20E3; Enter a resource URI
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input
+        <div className="flex gap-2">
+          <Input
             type="text"
             value={uri}
             onChange={(e) => setUri(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && fetchResource(uri)}
             placeholder="notes://all"
-            style={{ ...inputStyle, flex: 1, fontFamily: "monospace" }}
+            className="font-mono text-sm"
           />
-          <button onClick={() => fetchResource(uri)} disabled={loading} style={buttonStyle(true)}>
-            {loading ? "⏳" : "📖"} Read
-          </button>
+          <Button onClick={() => fetchResource(uri)} disabled={loading}>
+            {loading ? "&#x23F3;" : "&#x1F4D6;"} Read
+          </Button>
         </div>
       </div>
 
       {/* Quick presets */}
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
-          2️⃣ Or try these examples
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground mb-2">
+          2&#xFE0F;&#x20E3; Or try these examples
         </div>
-        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+        <div className="flex flex-wrap gap-2">
           {presetResources.map((preset) => (
-            <button
+            <Button
               key={preset.uri}
+              variant={uri === preset.uri ? "default" : "outline"}
+              size="sm"
               onClick={() => fetchResource(preset.uri)}
               disabled={loading}
-              style={{
-                ...buttonStyle(),
-                opacity: uri === preset.uri ? 1 : 0.7,
-                borderColor: uri === preset.uri ? (isDark ? "#2563eb" : "#3b82f6") : isDark ? "#555" : "#ccc",
-              }}
             >
-              {preset.icon} {preset.label}
-            </button>
+              <span dangerouslySetInnerHTML={{ __html: preset.icon }} /> {preset.label}
+            </Button>
           ))}
         </div>
       </div>
 
       {/* Create a note */}
       {callTool && (
-        <div style={{ marginBottom: "1rem" }}>
-          <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
-            3️⃣ Create a note (uses tools/call, then refresh)
+        <div>
+          <div className="text-xs font-semibold text-muted-foreground mb-2">
+            3&#xFE0F;&#x20E3; Create a note (uses tools/call, then refresh)
           </div>
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <input
+          <div className="flex gap-2">
+            <Input
               type="text"
               value={newNoteTitle}
               onChange={(e) => setNewNoteTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && createNote()}
               placeholder="New note title..."
               disabled={creatingNote}
-              style={{ ...inputStyle, flex: 1 }}
             />
-            <button
+            <Button
+              variant="secondary"
               onClick={createNote}
               disabled={creatingNote || !newNoteTitle.trim()}
-              style={buttonStyle()}
             >
-              {creatingNote ? "⏳" : "➕"} Create
-            </button>
+              {creatingNote ? "&#x23F3;" : "&#x2795;"} Create
+            </Button>
           </div>
         </div>
       )}
 
       {/* Response */}
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-          <div style={{ fontSize: "0.8rem", fontWeight: "bold", opacity: 0.7 }}>
-            📬 Response
+        <div className="flex justify-between items-center mb-2">
+          <div className="text-xs font-semibold text-muted-foreground">
+            &#x1F4EC; Response
           </div>
           {response && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowRaw(!showRaw)}
-              style={{ ...buttonStyle(), fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
+              className="h-6 text-xs"
             >
               {showRaw ? "Pretty" : "Raw JSON"}
-            </button>
+            </Button>
           )}
         </div>
 
-        <div
-          style={{
-            padding: "0.75rem",
-            background: isDark ? "#222" : "#f5f5f5",
-            borderRadius: "6px",
-            minHeight: "100px",
-            maxHeight: "200px",
-            overflow: "auto",
-            fontSize: "0.85rem",
-          }}
-        >
+        <div className="p-3 bg-muted rounded-lg min-h-[100px] max-h-[200px] overflow-auto text-sm">
           {loading && (
-            <div style={{ textAlign: "center", opacity: 0.7 }}>
+            <div className="text-center text-muted-foreground">
               <div>Loading...</div>
-              <div style={{ fontFamily: "monospace", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+              <div className="font-mono text-xs mt-1">
                 readResource("{uri}")
               </div>
             </div>
           )}
 
           {error && (
-            <div style={{ color: isDark ? "#fca5a5" : "#dc2626" }}>
-              ⚠️ {error}
+            <div className="text-destructive">
+              &#x26A0;&#xFE0F; {error}
             </div>
           )}
 
           {!loading && !error && response && (
             showRaw ? (
-              <pre style={{ margin: 0, fontSize: "0.75rem", whiteSpace: "pre-wrap" }}>
+              <pre className="text-xs whitespace-pre-wrap">
                 {JSON.stringify(response, null, 2)}
               </pre>
             ) : (
@@ -259,7 +229,7 @@ export function NotesWidget({ isDark, readResource, callTool }: ResourceExplorer
           )}
 
           {!loading && !error && !response && (
-            <div style={{ opacity: 0.5, textAlign: "center" }}>
+            <div className="text-muted-foreground text-center">
               Click "Read" to fetch a resource
             </div>
           )}
@@ -267,20 +237,10 @@ export function NotesWidget({ isDark, readResource, callTool }: ResourceExplorer
 
         {/* Request info */}
         {response && (
-          <div
-            style={{
-              marginTop: "0.5rem",
-              padding: "0.5rem",
-              background: isDark ? "#1a1a1a" : "#e5e5e5",
-              borderRadius: "4px",
-              fontFamily: "monospace",
-              fontSize: "0.7rem",
-              opacity: 0.8,
-            }}
-          >
-            <div>📤 Request: resources/read</div>
-            <div>📍 URI: {uri}</div>
-            <div>📦 MIME: {response.contents?.[0]?.mimeType || "unknown"}</div>
+          <div className="mt-2 p-2 bg-secondary rounded text-xs font-mono text-muted-foreground">
+            <div>&#x1F4E4; Request: resources/read</div>
+            <div>&#x1F4CD; URI: {uri}</div>
+            <div>&#x1F4E6; MIME: {response.contents?.[0]?.mimeType || "unknown"}</div>
           </div>
         )}
       </div>

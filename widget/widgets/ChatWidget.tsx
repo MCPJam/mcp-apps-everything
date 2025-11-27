@@ -8,9 +8,12 @@
  */
 
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Send } from "lucide-react";
 
 interface ChatWidgetProps {
-  isDark: boolean;
   sendMessage: (text: string) => Promise<void>;
 }
 
@@ -21,14 +24,14 @@ interface SentMessage {
 }
 
 const quickActions = [
-  { label: "📊 Analyze", message: "Please analyze the data shown above." },
-  { label: "📝 Explain", message: "Can you explain how this works?" },
-  { label: "🔄 Retry", message: "Please try that again with different parameters." },
-  { label: "✅ Yes", message: "Yes, please proceed." },
-  { label: "❌ No", message: "No, let's try something else." },
+  { label: "&#x1F4CA; Analyze", message: "Please analyze the data shown above." },
+  { label: "&#x1F4DD; Explain", message: "Can you explain how this works?" },
+  { label: "&#x1F504; Retry", message: "Please try that again with different parameters." },
+  { label: "&#x2705; Yes", message: "Yes, please proceed." },
+  { label: "&#x274C; No", message: "No, let's try something else." },
 ];
 
-export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
+export function ChatWidget({ sendMessage }: ChatWidgetProps) {
   const [customMessage, setCustomMessage] = useState("");
   const [sentMessages, setSentMessages] = useState<SentMessage[]>([]);
   const [sending, setSending] = useState(false);
@@ -44,7 +47,7 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
         { text, timestamp: new Date(), status: "sent" },
       ]);
       setCustomMessage("");
-    } catch (err) {
+    } catch {
       setSentMessages((prev) => [
         ...prev,
         { text, timestamp: new Date(), status: "error" },
@@ -54,154 +57,98 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
     }
   };
 
-  const buttonStyle = (primary = false) => ({
-    padding: "0.5rem 0.75rem",
-    background: primary
-      ? isDark
-        ? "#2563eb"
-        : "#3b82f6"
-      : isDark
-      ? "#333"
-      : "#eee",
-    color: primary ? "#fff" : isDark ? "#fff" : "#000",
-    border: `1px solid ${isDark ? "#555" : "#ccc"}`,
-    borderRadius: "4px",
-    cursor: sending ? "wait" : "pointer",
-    fontSize: "0.85rem",
-    opacity: sending ? 0.6 : 1,
-  });
-
   return (
-    <div>
+    <div className="space-y-4">
       {/* Educational Banner */}
-      <div
-        style={{
-          padding: "0.75rem",
-          background: isDark ? "#1e3a5f" : "#dbeafe",
-          borderRadius: "8px",
-          marginBottom: "1rem",
-          border: `1px solid ${isDark ? "#2563eb" : "#93c5fd"}`,
-        }}
-      >
-        <div style={{ fontWeight: "bold", marginBottom: "0.25rem", fontSize: "0.9rem" }}>
-          💡 Best used in Playground
-        </div>
-        <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
-          This widget lets tools send <strong>follow-up messages</strong> to the AI.
-          Try it in the Playground tab to see messages appear in the chat!
-        </div>
-      </div>
+      <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950">
+        <CardContent className="p-3">
+          <div className="font-semibold text-sm mb-1">
+            &#x1F4A1; Best used in Playground
+          </div>
+          <div className="text-xs text-muted-foreground">
+            This widget lets tools send <strong>follow-up messages</strong> to the AI.
+            Try it in the Playground tab to see messages appear in the chat!
+          </div>
+        </CardContent>
+      </Card>
 
       {/* How it works */}
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground mb-2">
           How it works
         </div>
-        <div
-          style={{
-            padding: "0.5rem 0.75rem",
-            background: isDark ? "#222" : "#f5f5f5",
-            borderRadius: "6px",
-            fontFamily: "monospace",
-            fontSize: "0.75rem",
-          }}
-        >
+        <div className="p-3 bg-muted rounded-lg font-mono text-xs space-y-1">
           <div>1. User clicks a button or types a message</div>
-          <div>2. Widget calls <code style={{ background: isDark ? "#333" : "#e5e5e5", padding: "0 0.25rem", borderRadius: "2px" }}>ui/message</code></div>
+          <div>2. Widget calls <code className="bg-secondary px-1 rounded">ui/message</code></div>
           <div>3. Message appears in chat as user input</div>
           <div>4. AI responds to the new message</div>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground mb-2">
           Quick responses (click to send)
         </div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+        <div className="flex flex-wrap gap-2">
           {quickActions.map((action) => (
-            <button
+            <Button
               key={action.label}
+              variant="outline"
+              size="sm"
               onClick={() => handleSendMessage(action.message)}
               disabled={sending}
-              style={buttonStyle()}
               title={action.message}
             >
-              {action.label}
-            </button>
+              <span dangerouslySetInnerHTML={{ __html: action.label }} />
+            </Button>
           ))}
         </div>
       </div>
 
       {/* Custom Message */}
-      <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+      <div>
+        <div className="text-xs font-semibold text-muted-foreground mb-2">
           Or type a custom message
         </div>
-        <div style={{ display: "flex", gap: "0.5rem" }}>
-          <input
+        <div className="flex gap-2">
+          <Input
             type="text"
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage(customMessage)}
             placeholder="Type your follow-up message..."
             disabled={sending}
-            style={{
-              flex: 1,
-              padding: "0.5rem",
-              background: isDark ? "#222" : "#fff",
-              color: isDark ? "#fff" : "#000",
-              border: `1px solid ${isDark ? "#444" : "#ccc"}`,
-              borderRadius: "4px",
-            }}
           />
-          <button
+          <Button
             onClick={() => handleSendMessage(customMessage)}
             disabled={sending || !customMessage.trim()}
-            style={buttonStyle(true)}
           >
-            {sending ? "⏳" : "📤"} Send
-          </button>
+            <Send className="size-4" />
+            Send
+          </Button>
         </div>
       </div>
 
       {/* Sent Messages */}
       {sentMessages.length > 0 && (
         <div>
-          <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+          <div className="text-xs font-semibold text-muted-foreground mb-2">
             Messages sent via ui/message
           </div>
-          <div
-            style={{
-              maxHeight: "100px",
-              overflow: "auto",
-              background: isDark ? "#222" : "#f5f5f5",
-              borderRadius: "6px",
-              padding: "0.5rem",
-            }}
-          >
+          <div className="max-h-[100px] overflow-auto bg-muted rounded-lg p-2 space-y-2">
             {sentMessages.slice(-3).map((msg, i) => (
               <div
                 key={i}
-                style={{
-                  padding: "0.5rem",
-                  marginBottom: i < sentMessages.length - 1 ? "0.25rem" : 0,
-                  background: isDark ? "#333" : "#fff",
-                  borderRadius: "4px",
-                  borderLeft: `3px solid ${
-                    msg.status === "sent"
-                      ? isDark
-                        ? "#22c55e"
-                        : "#16a34a"
-                      : isDark
-                      ? "#ef4444"
-                      : "#dc2626"
-                  }`,
-                }}
+                className={`p-2 bg-card rounded border-l-3 ${
+                  msg.status === "sent"
+                    ? "border-l-green-500"
+                    : "border-l-red-500"
+                }`}
               >
-                <div style={{ fontSize: "0.85rem" }}>{msg.text}</div>
-                <div style={{ fontSize: "0.7rem", opacity: 0.6, marginTop: "0.25rem" }}>
-                  {msg.timestamp.toLocaleTimeString()} • {msg.status === "sent" ? "✓ Sent to chat" : "✗ Failed"}
+                <div className="text-sm">{msg.text}</div>
+                <div className="text-xs text-muted-foreground mt-1">
+                  {msg.timestamp.toLocaleTimeString()} &#x2022; {msg.status === "sent" ? "&#x2713; Sent to chat" : "&#x2717; Failed"}
                 </div>
               </div>
             ))}
