@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
-import type { CallToolResult } from "../../shared/types";
+import type { CallToolResult } from "../hooks/useApp";
 
 interface ToolCallWidgetProps {
   toolInput: { arguments: Record<string, unknown> } | null;

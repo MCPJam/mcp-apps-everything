@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
-import type { ReadResourceResult } from "../../shared/types";
+import type { ReadResourceResult } from "../hooks/useApp";
 
 interface Resource {
   id: string;
@@ -42,8 +42,8 @@ export function ReadResourceWidget({ toolResult, readResource }: ReadResourceWid
 
     try {
       const result = await readResource(`tips://${resourceId}`);
-      const contents = (result as unknown as { content?: { contents?: Array<{ text?: string }> } })
-        ?.content?.contents;
+      // ReadResourceResult has { contents: Array<{ text?: string, ... }> }
+      const contents = result?.contents;
       const textContent = contents?.[0]?.text;
 
       if (textContent) {

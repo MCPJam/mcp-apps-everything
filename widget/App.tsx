@@ -23,6 +23,7 @@ type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | null
 export function App() {
   const {
     isConnected,
+    error,
     hostContext,
     toolInput,
     toolResult,
@@ -30,7 +31,6 @@ export function App() {
     readResource,
     sendMessage,
     openLink,
-    resize,
   } = useApp();
 
   const isDark = hostContext?.theme === "dark";
@@ -48,16 +48,22 @@ export function App() {
   const widgetType: WidgetType =
     (toolResult?.structuredContent?._widget as WidgetType) || null;
 
-  // Notify host of resize on mount
-  useEffect(() => {
-    resize(400, 450);
-  }, [resize]);
-
-  // Loading state
+  // Loading state or error
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-muted-foreground">Connecting...</div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          {error ? (
+            <div className="text-red-500 text-sm">
+              <div className="font-medium mb-1">Connection Error:</div>
+              <div className="text-xs font-mono bg-red-500/10 p-2 rounded max-w-md overflow-auto">
+                {error.message}
+              </div>
+            </div>
+          ) : (
+            <div className="text-muted-foreground">Connecting...</div>
+          )}
+        </div>
       </div>
     );
   }
