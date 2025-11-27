@@ -1,32 +1,26 @@
 /**
- * Resource Explorer Widget - Teaches resources/read API
- *
- * Features:
- * - Interactive resource URI input
- * - Preset example URIs to explore
- * - Shows raw request/response
- * - Create notes to have data to browse
+ * Notes Widget - Demonstrates resources/read API
  */
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { BookOpen, FileText, Plus, RefreshCw, Code, ChevronRight } from "lucide-react";
 import type { ReadResourceResult, CallToolResult } from "../../shared/types";
 
-interface ResourceExplorerProps {
+interface NotesWidgetProps {
   toolInput: { arguments: Record<string, unknown> } | null;
   readResource: (uri: string) => Promise<ReadResourceResult>;
   callTool?: (name: string, args: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
 const presetResources = [
-  { uri: "notes://all", label: "All Notes", icon: "&#x1F4DA;" },
-  { uri: "notes://note-1", label: "Note #1", icon: "&#x1F4C4;" },
-  { uri: "notes://note-2", label: "Note #2", icon: "&#x1F4C4;" },
+  { uri: "notes://all", label: "All Notes", icon: BookOpen },
+  { uri: "notes://note-1", label: "Note 1", icon: FileText },
+  { uri: "notes://note-2", label: "Note 2", icon: FileText },
 ];
 
-export function NotesWidget({ readResource, callTool }: ResourceExplorerProps) {
+export function NotesWidget({ readResource, callTool }: NotesWidgetProps) {
   const [uri, setUri] = useState("notes://all");
   const [response, setResponse] = useState<ReadResourceResult | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,10 +51,9 @@ export function NotesWidget({ readResource, callTool }: ResourceExplorerProps) {
     try {
       await callTool("create-note", {
         title: newNoteTitle,
-        content: `This note was created via tools/call to demonstrate how resources/read can fetch dynamically created content.`,
+        content: `Note created via tools/call API.`,
       });
       setNewNoteTitle("");
-      // Refresh the notes list
       await fetchResource("notes://all");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to create note");
@@ -79,148 +72,138 @@ export function NotesWidget({ readResource, callTool }: ResourceExplorerProps) {
         return (
           <div className="space-y-2">
             {data.map((item, i) => (
-              <div
+              <button
                 key={i}
                 onClick={() => item.id && fetchResource(`notes://${item.id}`)}
-                className="p-3 bg-secondary rounded-lg cursor-pointer hover:bg-secondary/80 transition-colors"
+                className="w-full text-left p-3 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-accent transition-all group"
               >
-                <div className="font-semibold">{item.title || `Item ${i + 1}`}</div>
+                <div className="flex items-center justify-between">
+                  <div className="font-medium">{item.title || `Item ${i + 1}`}</div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                </div>
                 {item.createdAt && (
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground mt-1">
                     {new Date(item.createdAt).toLocaleDateString()}
                   </div>
                 )}
-              </div>
+              </button>
             ))}
           </div>
         );
       }
-      // Single object
       return (
-        <div className="leading-relaxed">
+        <div className="p-4 rounded-lg bg-card border border-border">
           {data.title && (
             <div className="font-semibold text-lg mb-2">{data.title}</div>
           )}
           {data.content && (
-            <div className="whitespace-pre-wrap">{data.content}</div>
+            <div className="text-muted-foreground whitespace-pre-wrap">{data.content}</div>
           )}
           {data.createdAt && (
-            <div className="text-xs text-muted-foreground mt-2">
-              Created: {new Date(data.createdAt).toLocaleString()}
+            <div className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+              Created {new Date(data.createdAt).toLocaleString()}
             </div>
           )}
         </div>
       );
     } catch {
-      return <pre className="whitespace-pre-wrap text-sm">{content.text}</pre>;
+      return <pre className="whitespace-pre-wrap text-sm p-4 bg-card rounded-lg">{content.text}</pre>;
     }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Step 1: Enter URI */}
-      <div>
-        <div className="text-xs font-semibold text-muted-foreground mb-2">
-          1&#xFE0F;&#x20E3; Enter a resource URI
-        </div>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            value={uri}
-            onChange={(e) => setUri(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && fetchResource(uri)}
-            placeholder="notes://all"
-            className="font-mono text-sm"
-          />
-          <Button onClick={() => fetchResource(uri)} disabled={loading}>
-            {loading ? "&#x23F3;" : "&#x1F4D6;"} Read
-          </Button>
-        </div>
+    <div className="p-4 space-y-4">
+      {/* Search Bar */}
+      <div className="flex gap-2">
+        <Input
+          type="text"
+          value={uri}
+          onChange={(e) => setUri(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && fetchResource(uri)}
+          placeholder="notes://all"
+          className="font-mono text-sm"
+        />
+        <Button onClick={() => fetchResource(uri)} disabled={loading}>
+          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
+        </Button>
       </div>
 
-      {/* Quick presets */}
-      <div>
-        <div className="text-xs font-semibold text-muted-foreground mb-2">
-          2&#xFE0F;&#x20E3; Or try these examples
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {presetResources.map((preset) => (
+      {/* Quick Access */}
+      <div className="flex flex-wrap gap-2">
+        {presetResources.map((preset) => {
+          const Icon = preset.icon;
+          return (
             <Button
               key={preset.uri}
               variant={uri === preset.uri ? "default" : "outline"}
               size="sm"
+              className="rounded-full transition-all hover:scale-105"
               onClick={() => fetchResource(preset.uri)}
               disabled={loading}
             >
-              <span dangerouslySetInnerHTML={{ __html: preset.icon }} /> {preset.label}
+              <Icon className="h-3 w-3 mr-1.5" />
+              {preset.label}
             </Button>
-          ))}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Create a note */}
+      {/* Create Note */}
       {callTool && (
-        <div>
-          <div className="text-xs font-semibold text-muted-foreground mb-2">
-            3&#xFE0F;&#x20E3; Create a note (uses tools/call, then refresh)
-          </div>
-          <div className="flex gap-2">
-            <Input
-              type="text"
-              value={newNoteTitle}
-              onChange={(e) => setNewNoteTitle(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && createNote()}
-              placeholder="New note title..."
-              disabled={creatingNote}
-            />
-            <Button
-              variant="secondary"
-              onClick={createNote}
-              disabled={creatingNote || !newNoteTitle.trim()}
-            >
-              {creatingNote ? "&#x23F3;" : "&#x2795;"} Create
-            </Button>
-          </div>
+        <div className="flex gap-2">
+          <Input
+            type="text"
+            value={newNoteTitle}
+            onChange={(e) => setNewNoteTitle(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && createNote()}
+            placeholder="New note title..."
+            disabled={creatingNote}
+            className="text-sm"
+          />
+          <Button
+            variant="secondary"
+            onClick={createNote}
+            disabled={creatingNote || !newNoteTitle.trim()}
+          >
+            {creatingNote ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          </Button>
         </div>
       )}
 
-      {/* Response */}
-      <div>
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-xs font-semibold text-muted-foreground">
-            &#x1F4EC; Response
-          </div>
+      {/* Response Area */}
+      <div className="rounded-xl bg-muted/50 border border-border overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
+          <span className="text-xs font-medium text-muted-foreground">Response</span>
           {response && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowRaw(!showRaw)}
-              className="h-6 text-xs"
+              className="h-6 text-xs gap-1"
             >
-              {showRaw ? "Pretty" : "Raw JSON"}
+              <Code className="h-3 w-3" />
+              {showRaw ? "Pretty" : "JSON"}
             </Button>
           )}
         </div>
 
-        <div className="p-3 bg-muted rounded-lg min-h-[100px] max-h-[200px] overflow-auto text-sm">
+        <div className="p-3 min-h-[120px] max-h-[200px] overflow-auto">
           {loading && (
-            <div className="text-center text-muted-foreground">
-              <div>Loading...</div>
-              <div className="font-mono text-xs mt-1">
-                readResource("{uri}")
-              </div>
+            <div className="flex items-center justify-center h-[100px] text-muted-foreground">
+              <RefreshCw className="h-5 w-5 animate-spin mr-2" />
+              Loading...
             </div>
           )}
 
           {error && (
-            <div className="text-destructive">
-              &#x26A0;&#xFE0F; {error}
+            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+              {error}
             </div>
           )}
 
           {!loading && !error && response && (
             showRaw ? (
-              <pre className="text-xs whitespace-pre-wrap">
+              <pre className="text-xs whitespace-pre-wrap font-mono">
                 {JSON.stringify(response, null, 2)}
               </pre>
             ) : (
@@ -229,20 +212,11 @@ export function NotesWidget({ readResource, callTool }: ResourceExplorerProps) {
           )}
 
           {!loading && !error && !response && (
-            <div className="text-muted-foreground text-center">
-              Click "Read" to fetch a resource
+            <div className="flex items-center justify-center h-[100px] text-muted-foreground text-sm">
+              Select a resource to view
             </div>
           )}
         </div>
-
-        {/* Request info */}
-        {response && (
-          <div className="mt-2 p-2 bg-secondary rounded text-xs font-mono text-muted-foreground">
-            <div>&#x1F4E4; Request: resources/read</div>
-            <div>&#x1F4CD; URI: {uri}</div>
-            <div>&#x1F4E6; MIME: {response.contents?.[0]?.mimeType || "unknown"}</div>
-          </div>
-        )}
       </div>
     </div>
   );
