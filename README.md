@@ -37,16 +37,30 @@ npm run dev     # Run server + vite dev (hot reload)
 ├── widget/
 │   ├── App.tsx          # Main app with tabbed interface
 │   ├── main.tsx         # Entry point
+│   ├── globals.css      # Global styles
+│   ├── components/
+│   │   └── ui/          # Reusable UI components
+│   │       ├── badge.tsx
+│   │       ├── button.tsx
+│   │       ├── card.tsx
+│   │       ├── input.tsx
+│   │       └── textarea.tsx
 │   ├── hooks/
 │   │   └── useApp.ts    # React hook for all SEP-1865 APIs
+│   ├── lib/
+│   │   └── utils.ts     # Utility functions
 │   └── widgets/
-│       ├── CounterWidget.tsx   # tools/call demo
-│       ├── WeatherWidget.tsx   # ui/open-link demo
-│       ├── NotesWidget.tsx     # resources/read demo
-│       └── ChatWidget.tsx      # ui/message demo
+│       ├── ToolCallWidget.tsx    # tools/call demo
+│       ├── OpenLinkWidget.tsx    # ui/open-link demo
+│       ├── ReadResourceWidget.tsx  # resources/read demo
+│       └── MessageWidget.tsx     # ui/message demo
 ├── shared/
 │   └── types.ts         # Complete SEP-1865 type definitions
-└── dist/                # Built widget (single HTML file)
+├── dist/                # Built widget (single HTML file)
+├── index.html           # Root HTML file
+├── vite.config.ts       # Vite configuration
+├── tsconfig.json        # TypeScript configuration
+└── package.json         # Dependencies and scripts
 ```
 
 ## SEP-1865 APIs
