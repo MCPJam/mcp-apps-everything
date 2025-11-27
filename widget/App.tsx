@@ -190,6 +190,7 @@ export function App() {
             isDark={isDark}
             toolInput={toolInput}
             readResource={readResource}
+            callTool={callTool}
           />
         )}
         {widgetType === "chat" && (

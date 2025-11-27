@@ -1,195 +1,288 @@
 /**
- * Notes Widget - Demonstrates resources/read API
+ * Resource Explorer Widget - Teaches resources/read API
  *
  * Features:
- * - Reads MCP resources via resources/read
- * - Lists available notes from a resource
- * - Shows resource content
+ * - Interactive resource URI input
+ * - Preset example URIs to explore
+ * - Shows raw request/response
+ * - Create notes to have data to browse
  */
 
-import { useState, useEffect } from "react";
-import type { ReadResourceResult } from "../../shared/types";
+import { useState } from "react";
+import type { ReadResourceResult, CallToolResult } from "../../shared/types";
 
-interface NotesWidgetProps {
+interface ResourceExplorerProps {
   isDark: boolean;
   toolInput: { arguments: Record<string, unknown> } | null;
   readResource: (uri: string) => Promise<ReadResourceResult>;
+  callTool?: (name: string, args: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: string;
-}
+const presetResources = [
+  { uri: "notes://all", label: "All Notes", icon: "📚" },
+  { uri: "notes://note-1", label: "Note #1", icon: "📄" },
+  { uri: "notes://note-2", label: "Note #2", icon: "📄" },
+];
 
-export function NotesWidget({ isDark, toolInput, readResource }: NotesWidgetProps) {
-  const [notes, setNotes] = useState<Note[]>([]);
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+export function NotesWidget({ isDark, readResource, callTool }: ResourceExplorerProps) {
+  const [uri, setUri] = useState("notes://all");
+  const [response, setResponse] = useState<ReadResourceResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [resourceUri, setResourceUri] = useState<string>("notes://all");
+  const [showRaw, setShowRaw] = useState(false);
+  const [newNoteTitle, setNewNoteTitle] = useState("");
+  const [creatingNote, setCreatingNote] = useState(false);
 
-  // Load notes from resource
-  const loadNotes = async (uri: string) => {
+  const fetchResource = async (resourceUri: string) => {
     setLoading(true);
     setError(null);
+    setUri(resourceUri);
+
     try {
-      const result = await readResource(uri);
-      if (result.contents?.[0]?.text) {
-        const data = JSON.parse(result.contents[0].text);
-        if (Array.isArray(data)) {
-          setNotes(data);
-        } else if (data.notes) {
-          setNotes(data.notes);
-        }
-      }
+      const result = await readResource(resourceUri);
+      setResponse(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load notes");
+      setError(err instanceof Error ? err.message : "Failed to read resource");
+      setResponse(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Load a single note
-  const loadNote = async (noteId: string) => {
-    setLoading(true);
-    setError(null);
+  const createNote = async () => {
+    if (!callTool || !newNoteTitle.trim()) return;
+    setCreatingNote(true);
     try {
-      const result = await readResource(`notes://${noteId}`);
-      if (result.contents?.[0]?.text) {
-        const note = JSON.parse(result.contents[0].text);
-        setSelectedNote(note);
-      }
+      await callTool("create-note", {
+        title: newNoteTitle,
+        content: `This note was created via tools/call to demonstrate how resources/read can fetch dynamically created content.`,
+      });
+      setNewNoteTitle("");
+      // Refresh the notes list
+      await fetchResource("notes://all");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load note");
+      setError(err instanceof Error ? err.message : "Failed to create note");
     } finally {
-      setLoading(false);
+      setCreatingNote(false);
     }
   };
 
-  // Initial load
-  useEffect(() => {
-    loadNotes(resourceUri);
-  }, []);
+  const formatContent = (result: ReadResourceResult) => {
+    const content = result.contents?.[0];
+    if (!content) return null;
 
-  const buttonStyle = {
-    padding: "0.4rem 0.8rem",
-    background: isDark ? "#333" : "#eee",
+    try {
+      const data = JSON.parse(content.text || "");
+      if (Array.isArray(data)) {
+        return (
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+            {data.map((item, i) => (
+              <div
+                key={i}
+                onClick={() => item.id && fetchResource(`notes://${item.id}`)}
+                style={{
+                  padding: "0.75rem",
+                  background: isDark ? "#333" : "#e5e5e5",
+                  borderRadius: "6px",
+                  cursor: item.id ? "pointer" : "default",
+                }}
+              >
+                <div style={{ fontWeight: "bold" }}>{item.title || `Item ${i + 1}`}</div>
+                {item.createdAt && (
+                  <div style={{ fontSize: "0.75rem", opacity: 0.6 }}>
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      }
+      // Single object
+      return (
+        <div style={{ lineHeight: 1.6 }}>
+          {data.title && <div style={{ fontWeight: "bold", fontSize: "1.1rem", marginBottom: "0.5rem" }}>{data.title}</div>}
+          {data.content && <div style={{ whiteSpace: "pre-wrap" }}>{data.content}</div>}
+          {data.createdAt && (
+            <div style={{ fontSize: "0.75rem", opacity: 0.6, marginTop: "0.5rem" }}>
+              Created: {new Date(data.createdAt).toLocaleString()}
+            </div>
+          )}
+        </div>
+      );
+    } catch {
+      return <pre style={{ margin: 0, whiteSpace: "pre-wrap" }}>{content.text}</pre>;
+    }
+  };
+
+  const inputStyle = {
+    padding: "0.5rem",
+    background: isDark ? "#222" : "#fff",
     color: isDark ? "#fff" : "#000",
+    border: `1px solid ${isDark ? "#444" : "#ccc"}`,
+    borderRadius: "4px",
+    fontSize: "0.9rem",
+  };
+
+  const buttonStyle = (primary = false) => ({
+    padding: "0.5rem 0.75rem",
+    background: primary ? (isDark ? "#2563eb" : "#3b82f6") : isDark ? "#333" : "#eee",
+    color: primary ? "#fff" : isDark ? "#fff" : "#000",
     border: `1px solid ${isDark ? "#555" : "#ccc"}`,
     borderRadius: "4px",
     cursor: "pointer",
     fontSize: "0.85rem",
-  };
-
-  const noteItemStyle = (isSelected: boolean) => ({
-    padding: "0.5rem",
-    marginBottom: "0.25rem",
-    background: isSelected ? (isDark ? "#2563eb" : "#3b82f6") : isDark ? "#222" : "#f5f5f5",
-    color: isSelected ? "#fff" : isDark ? "#fff" : "#000",
-    borderRadius: "4px",
-    cursor: "pointer",
   });
 
   return (
     <div>
-      <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", opacity: 0.7 }}>
-        resources/read Demo
-      </h3>
-
+      {/* Step 1: Enter URI */}
       <div style={{ marginBottom: "1rem" }}>
-        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.5rem" }}>
+        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+          1️⃣ Enter a resource URI
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
           <input
             type="text"
-            value={resourceUri}
-            onChange={(e) => setResourceUri(e.target.value)}
-            placeholder="Resource URI (e.g., notes://all)"
-            style={{
-              flex: 1,
-              padding: "0.4rem",
-              background: isDark ? "#222" : "#fff",
-              color: isDark ? "#fff" : "#000",
-              border: `1px solid ${isDark ? "#444" : "#ccc"}`,
-              borderRadius: "4px",
-            }}
+            value={uri}
+            onChange={(e) => setUri(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchResource(uri)}
+            placeholder="notes://all"
+            style={{ ...inputStyle, flex: 1, fontFamily: "monospace" }}
           />
-          <button onClick={() => loadNotes(resourceUri)} disabled={loading} style={buttonStyle}>
-            {loading ? "..." : "Load"}
+          <button onClick={() => fetchResource(uri)} disabled={loading} style={buttonStyle(true)}>
+            {loading ? "⏳" : "📖"} Read
           </button>
         </div>
       </div>
 
-      {error && (
-        <div
-          style={{
-            padding: "0.5rem",
-            marginBottom: "0.5rem",
-            background: isDark ? "#7f1d1d" : "#fef2f2",
-            color: isDark ? "#fca5a5" : "#b91c1c",
-            borderRadius: "4px",
-            fontSize: "0.85rem",
-          }}
-        >
-          ⚠️ {error}
+      {/* Quick presets */}
+      <div style={{ marginBottom: "1rem" }}>
+        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+          2️⃣ Or try these examples
+        </div>
+        <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+          {presetResources.map((preset) => (
+            <button
+              key={preset.uri}
+              onClick={() => fetchResource(preset.uri)}
+              disabled={loading}
+              style={{
+                ...buttonStyle(),
+                opacity: uri === preset.uri ? 1 : 0.7,
+                borderColor: uri === preset.uri ? (isDark ? "#2563eb" : "#3b82f6") : isDark ? "#555" : "#ccc",
+              }}
+            >
+              {preset.icon} {preset.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Create a note */}
+      {callTool && (
+        <div style={{ marginBottom: "1rem" }}>
+          <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+            3️⃣ Create a note (uses tools/call, then refresh)
+          </div>
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <input
+              type="text"
+              value={newNoteTitle}
+              onChange={(e) => setNewNoteTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && createNote()}
+              placeholder="New note title..."
+              disabled={creatingNote}
+              style={{ ...inputStyle, flex: 1 }}
+            />
+            <button
+              onClick={createNote}
+              disabled={creatingNote || !newNoteTitle.trim()}
+              style={buttonStyle()}
+            >
+              {creatingNote ? "⏳" : "➕"} Create
+            </button>
+          </div>
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
-        {/* Notes List */}
-        <div>
-          <div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-            Notes ({notes.length})
+      {/* Response */}
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
+          <div style={{ fontSize: "0.8rem", fontWeight: "bold", opacity: 0.7 }}>
+            📬 Response
           </div>
-          <div style={{ maxHeight: "200px", overflow: "auto" }}>
-            {notes.length === 0 ? (
-              <div style={{ opacity: 0.6, fontSize: "0.85rem" }}>
-                {loading ? "Loading..." : "No notes found"}
-              </div>
-            ) : (
-              notes.map((note) => (
-                <div
-                  key={note.id}
-                  onClick={() => loadNote(note.id)}
-                  style={noteItemStyle(selectedNote?.id === note.id)}
-                >
-                  <div style={{ fontWeight: "bold", fontSize: "0.9rem" }}>{note.title}</div>
-                  <div style={{ fontSize: "0.75rem", opacity: 0.7 }}>
-                    {new Date(note.createdAt).toLocaleDateString()}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          {response && (
+            <button
+              onClick={() => setShowRaw(!showRaw)}
+              style={{ ...buttonStyle(), fontSize: "0.75rem", padding: "0.25rem 0.5rem" }}
+            >
+              {showRaw ? "Pretty" : "Raw JSON"}
+            </button>
+          )}
         </div>
 
-        {/* Note Content */}
-        <div>
-          <div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-            Content
-          </div>
+        <div
+          style={{
+            padding: "0.75rem",
+            background: isDark ? "#222" : "#f5f5f5",
+            borderRadius: "6px",
+            minHeight: "100px",
+            maxHeight: "200px",
+            overflow: "auto",
+            fontSize: "0.85rem",
+          }}
+        >
+          {loading && (
+            <div style={{ textAlign: "center", opacity: 0.7 }}>
+              <div>Loading...</div>
+              <div style={{ fontFamily: "monospace", fontSize: "0.75rem", marginTop: "0.5rem" }}>
+                readResource("{uri}")
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div style={{ color: isDark ? "#fca5a5" : "#dc2626" }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          {!loading && !error && response && (
+            showRaw ? (
+              <pre style={{ margin: 0, fontSize: "0.75rem", whiteSpace: "pre-wrap" }}>
+                {JSON.stringify(response, null, 2)}
+              </pre>
+            ) : (
+              formatContent(response)
+            )
+          )}
+
+          {!loading && !error && !response && (
+            <div style={{ opacity: 0.5, textAlign: "center" }}>
+              Click "Read" to fetch a resource
+            </div>
+          )}
+        </div>
+
+        {/* Request info */}
+        {response && (
           <div
             style={{
+              marginTop: "0.5rem",
               padding: "0.5rem",
-              background: isDark ? "#222" : "#f5f5f5",
+              background: isDark ? "#1a1a1a" : "#e5e5e5",
               borderRadius: "4px",
-              minHeight: "150px",
-              fontSize: "0.85rem",
-              whiteSpace: "pre-wrap",
+              fontFamily: "monospace",
+              fontSize: "0.7rem",
+              opacity: 0.8,
             }}
           >
-            {selectedNote ? (
-              <>
-                <div style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>
-                  {selectedNote.title}
-                </div>
-                {selectedNote.content}
-              </>
-            ) : (
-              <span style={{ opacity: 0.6 }}>Select a note to view</span>
-            )}
+            <div>📤 Request: resources/read</div>
+            <div>📍 URI: {uri}</div>
+            <div>📦 MIME: {response.contents?.[0]?.mimeType || "unknown"}</div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

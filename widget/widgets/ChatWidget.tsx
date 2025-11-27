@@ -2,9 +2,9 @@
  * Chat Widget - Demonstrates ui/message API
  *
  * Features:
- * - Sends messages to the chat via ui/message
- * - Provides quick action buttons
- * - Shows message history
+ * - Sends follow-up messages to the AI chat
+ * - Shows how widgets can drive conversation
+ * - Best used in Playground mode
  */
 
 import { useState } from "react";
@@ -21,12 +21,11 @@ interface SentMessage {
 }
 
 const quickActions = [
-  { label: "📊 Analyze this", message: "Please analyze the data shown in the widget above." },
-  { label: "📝 Summarize", message: "Can you summarize what we've discussed so far?" },
-  { label: "🔄 Refresh data", message: "Please refresh the data and show me the latest results." },
-  { label: "❓ Help", message: "I need help understanding how to use this feature." },
-  { label: "✅ Confirm", message: "Yes, please proceed with that action." },
-  { label: "❌ Cancel", message: "No, please cancel and show me other options." },
+  { label: "📊 Analyze", message: "Please analyze the data shown above." },
+  { label: "📝 Explain", message: "Can you explain how this works?" },
+  { label: "🔄 Retry", message: "Please try that again with different parameters." },
+  { label: "✅ Yes", message: "Yes, please proceed." },
+  { label: "❌ No", message: "No, let's try something else." },
 ];
 
 export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
@@ -74,14 +73,50 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
 
   return (
     <div>
-      <h3 style={{ margin: "0 0 0.5rem", fontSize: "0.9rem", opacity: 0.7 }}>
-        ui/message Demo
-      </h3>
+      {/* Educational Banner */}
+      <div
+        style={{
+          padding: "0.75rem",
+          background: isDark ? "#1e3a5f" : "#dbeafe",
+          borderRadius: "8px",
+          marginBottom: "1rem",
+          border: `1px solid ${isDark ? "#2563eb" : "#93c5fd"}`,
+        }}
+      >
+        <div style={{ fontWeight: "bold", marginBottom: "0.25rem", fontSize: "0.9rem" }}>
+          💡 Best used in Playground
+        </div>
+        <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+          This widget lets tools send <strong>follow-up messages</strong> to the AI.
+          Try it in the Playground tab to see messages appear in the chat!
+        </div>
+      </div>
+
+      {/* How it works */}
+      <div style={{ marginBottom: "1rem" }}>
+        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+          How it works
+        </div>
+        <div
+          style={{
+            padding: "0.5rem 0.75rem",
+            background: isDark ? "#222" : "#f5f5f5",
+            borderRadius: "6px",
+            fontFamily: "monospace",
+            fontSize: "0.75rem",
+          }}
+        >
+          <div>1. User clicks a button or types a message</div>
+          <div>2. Widget calls <code style={{ background: isDark ? "#333" : "#e5e5e5", padding: "0 0.25rem", borderRadius: "2px" }}>ui/message</code></div>
+          <div>3. Message appears in chat as user input</div>
+          <div>4. AI responds to the new message</div>
+        </div>
+      </div>
 
       {/* Quick Actions */}
       <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-          Quick Actions:
+        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+          Quick responses (click to send)
         </div>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
           {quickActions.map((action) => (
@@ -90,6 +125,7 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
               onClick={() => handleSendMessage(action.message)}
               disabled={sending}
               style={buttonStyle()}
+              title={action.message}
             >
               {action.label}
             </button>
@@ -99,8 +135,8 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
 
       {/* Custom Message */}
       <div style={{ marginBottom: "1rem" }}>
-        <div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-          Custom Message:
+        <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+          Or type a custom message
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <input
@@ -108,7 +144,7 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
             value={customMessage}
             onChange={(e) => setCustomMessage(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleSendMessage(customMessage)}
-            placeholder="Type your message..."
+            placeholder="Type your follow-up message..."
             disabled={sending}
             style={{
               flex: 1,
@@ -124,32 +160,32 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
             disabled={sending || !customMessage.trim()}
             style={buttonStyle(true)}
           >
-            {sending ? "..." : "Send"}
+            {sending ? "⏳" : "📤"} Send
           </button>
         </div>
       </div>
 
-      {/* Sent Messages History */}
+      {/* Sent Messages */}
       {sentMessages.length > 0 && (
         <div>
-          <div style={{ fontWeight: "bold", marginBottom: "0.5rem", fontSize: "0.9rem" }}>
-            Sent Messages:
+          <div style={{ fontSize: "0.8rem", fontWeight: "bold", marginBottom: "0.5rem", opacity: 0.7 }}>
+            Messages sent via ui/message
           </div>
           <div
             style={{
-              maxHeight: "150px",
+              maxHeight: "100px",
               overflow: "auto",
               background: isDark ? "#222" : "#f5f5f5",
-              borderRadius: "4px",
+              borderRadius: "6px",
               padding: "0.5rem",
             }}
           >
-            {sentMessages.slice(-5).map((msg, i) => (
+            {sentMessages.slice(-3).map((msg, i) => (
               <div
                 key={i}
                 style={{
                   padding: "0.5rem",
-                  marginBottom: "0.25rem",
+                  marginBottom: i < sentMessages.length - 1 ? "0.25rem" : 0,
                   background: isDark ? "#333" : "#fff",
                   borderRadius: "4px",
                   borderLeft: `3px solid ${
@@ -165,7 +201,7 @@ export function ChatWidget({ isDark, sendMessage }: ChatWidgetProps) {
               >
                 <div style={{ fontSize: "0.85rem" }}>{msg.text}</div>
                 <div style={{ fontSize: "0.7rem", opacity: 0.6, marginTop: "0.25rem" }}>
-                  {msg.timestamp.toLocaleTimeString()} - {msg.status === "sent" ? "✓ Sent" : "✗ Failed"}
+                  {msg.timestamp.toLocaleTimeString()} • {msg.status === "sent" ? "✓ Sent to chat" : "✗ Failed"}
                 </div>
               </div>
             ))}
