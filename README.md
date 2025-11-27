@@ -104,7 +104,7 @@ npm run dev     # Run server + vite dev (hot reload)
 1. Start the server: `npm start`
 2. Open MCPJam Inspector
 3. Connect to `http://localhost:3001/mcp` (Streamable HTTP)
-4. Go to Tools tab and run any `show-*` tool
+4. Go to Tools tab and run any tool
 5. The interactive widget will render in place of raw JSON
 
 ## Widget Development
@@ -152,30 +152,6 @@ server.registerTool("show-counter", {
   _meta: { "ui/resourceUri": "ui://main" },
   // ...
 });
-```
-
-### Communication Protocol
-
-Uses JSON-RPC 2.0 over `postMessage`:
-
-```typescript
-// Request
-window.parent.postMessage({
-  jsonrpc: "2.0",
-  id: 1,
-  method: "tools/call",
-  params: { name: "increment", arguments: { count: 5, amount: 1 } }
-}, "*");
-
-// Response
-{
-  jsonrpc: "2.0",
-  id: 1,
-  result: {
-    content: [{ type: "text", text: "Counter incremented to 6" }],
-    structuredContent: { count: 6 }
-  }
-}
 ```
 
 ### Security
