@@ -99,11 +99,6 @@ npm run dev     # Run server + vite dev (hot reload)
 - `ui://main` - Main widget HTML (text/html+mcp)
 - `ui://counter` - Legacy counter resource (backwards compatible)
 
-### Data Resources (`notes://`)
-
-- `notes://all` - All notes (application/json)
-- `notes://{id}` - Individual note by ID
-
 ## Using with MCPJam Inspector
 
 1. Start the server: `npm start`
