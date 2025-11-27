@@ -1,38 +1,195 @@
-# mcp-apps-everything
+# MCP Apps Everything
 
-Minimal MVP implementation of SEP-1865 MCP Apps.
+Complete implementation of SEP-1865 MCP Apps - showcasing all APIs and features.
 
-## Structure
+## Features
 
-```
-├── server/          # MCP server with UI tools
-│   └── index.ts     # Express + MCP SDK
-├── widget/          # React widget (runs in iframe)
-│   ├── App.tsx      # Counter widget
-│   ├── main.tsx     # Entry point
-│   └── hooks/
-│       └── useApp.ts  # MCP Apps communication hook
-├── shared/
-│   └── types.ts     # SEP-1865 type definitions
-└── dist/            # Built widget (single HTML file)
-```
+This demo server includes **4 interactive widgets** demonstrating all SEP-1865 APIs:
 
-## Usage
+| Widget | Tool | API Demonstrated |
+|--------|------|------------------|
+| Counter | `show-counter` | `tools/call` - Call MCP tools from the widget |
+| Weather | `show-weather` | `ui/open-link` - Open external URLs |
+| Notes | `show-notes` | `resources/read` - Read MCP resources |
+| Chat | `show-chat` | `ui/message` - Send messages to chat |
+
+## Quick Start
 
 ```bash
 npm install
 npm run build   # Build widget to dist/
-npm run dev     # Run server + vite dev
+npm start       # Start MCP server
 ```
 
 Server runs at `http://localhost:3001/mcp`
 
-## SEP-1865 Implementation
+## Development
 
-- **UI Resources**: `ui://counter` with `text/html+mcp` mime type
-- **Tool-UI Linkage**: `_meta["ui/resourceUri"]` on tools
-- **Communication**: JSON-RPC over postMessage
-  - `ui/initialize` → `ui/notifications/initialized`
-  - `ui/notifications/tool-input` (host → widget)
-  - `ui/notifications/tool-result` (host → widget)
-  - `tools/call` (widget → host → server)
+```bash
+npm run dev     # Run server + vite dev (hot reload)
+```
+
+## Project Structure
+
+```
+├── server/
+│   └── index.ts         # MCP server with all tools & resources
+├── widget/
+│   ├── App.tsx          # Main app with tabbed interface
+│   ├── main.tsx         # Entry point
+│   ├── hooks/
+│   │   └── useApp.ts    # React hook for all SEP-1865 APIs
+│   └── widgets/
+│       ├── CounterWidget.tsx   # tools/call demo
+│       ├── WeatherWidget.tsx   # ui/open-link demo
+│       ├── NotesWidget.tsx     # resources/read demo
+│       └── ChatWidget.tsx      # ui/message demo
+├── shared/
+│   └── types.ts         # Complete SEP-1865 type definitions
+└── dist/                # Built widget (single HTML file)
+```
+
+## SEP-1865 APIs
+
+### Widget → Host Requests
+
+| Method | Description |
+|--------|-------------|
+| `ui/initialize` | Initialize the widget and get host context |
+| `tools/call` | Call an MCP tool on the server |
+| `resources/read` | Read an MCP resource |
+| `ui/message` | Send a message to the chat |
+| `ui/open-link` | Open an external URL in the browser |
+
+### Widget → Host Notifications
+
+| Method | Description |
+|--------|-------------|
+| `ui/notifications/initialized` | Widget is fully initialized |
+| `ui/size-change` | Widget requests a size change |
+
+### Host → Widget Notifications
+
+| Method | Description |
+|--------|-------------|
+| `ui/notifications/tool-input` | Tool arguments before execution |
+| `ui/notifications/tool-result` | Tool result after execution |
+| `ui/host-context-change` | Theme or display mode changed |
+| `ui/tool-cancelled` | User cancelled the tool |
+| `ui/resource-teardown` | Widget is being removed |
+
+## MCP Server Tools
+
+### Tools with UI
+
+- **`show-counter`** - Interactive counter demonstrating `tools/call`
+- **`show-weather`** - Weather display demonstrating `ui/open-link`
+- **`show-notes`** - Notes browser demonstrating `resources/read`
+- **`show-chat`** - Chat interface demonstrating `ui/message`
+
+### Utility Tools
+
+- **`increment`** - Increment counter (called by Counter widget)
+- **`create-note`** - Create a new note
+
+## MCP Server Resources
+
+### UI Resources (`ui://`)
+
+- `ui://main` - Main widget HTML (text/html+mcp)
+- `ui://counter` - Legacy counter resource (backwards compatible)
+
+### Data Resources (`notes://`)
+
+- `notes://all` - All notes (application/json)
+- `notes://{id}` - Individual note by ID
+
+## Using with MCPJam Inspector
+
+1. Start the server: `npm start`
+2. Open MCPJam Inspector
+3. Connect to `http://localhost:3001/mcp` (Streamable HTTP)
+4. Go to Tools tab and run any `show-*` tool
+5. The interactive widget will render in place of raw JSON
+
+## Widget Development
+
+The `useApp()` hook provides all SEP-1865 APIs:
+
+```typescript
+import { useApp } from "./hooks/useApp";
+
+function MyWidget() {
+  const {
+    // State
+    isConnected,
+    hostContext,      // { theme, displayMode, ... }
+    toolInput,        // Arguments passed to tool
+    toolResult,       // Result from tool execution
+    isCancelled,
+    isTearingDown,
+
+    // Request APIs
+    callTool,         // (name, args) => Promise<CallToolResult>
+    readResource,     // (uri) => Promise<ReadResourceResult>
+    sendMessage,      // (text) => Promise<void>
+    openLink,         // (url) => Promise<void>
+
+    // Notification APIs
+    resize,           // (width, height) => void
+  } = useApp();
+
+  // Use hostContext.theme for theming
+  const isDark = hostContext?.theme === "dark";
+
+  // ...
+}
+```
+
+## Technical Details
+
+### Tool-UI Linkage
+
+Tools declare their UI resource via `_meta`:
+
+```typescript
+server.registerTool("show-counter", {
+  _meta: { "ui/resourceUri": "ui://main" },
+  // ...
+});
+```
+
+### Communication Protocol
+
+Uses JSON-RPC 2.0 over `postMessage`:
+
+```typescript
+// Request
+window.parent.postMessage({
+  jsonrpc: "2.0",
+  id: 1,
+  method: "tools/call",
+  params: { name: "increment", arguments: { count: 5, amount: 1 } }
+}, "*");
+
+// Response
+{
+  jsonrpc: "2.0",
+  id: 1,
+  result: {
+    content: [{ type: "text", text: "Counter incremented to 6" }],
+    structuredContent: { count: 6 }
+  }
+}
+```
+
+### Security
+
+The widget runs in a sandboxed iframe. The host controls:
+- Which tools can be called
+- Which resources can be read
+- Which URLs can be opened
+
+## License
+
+MIT
