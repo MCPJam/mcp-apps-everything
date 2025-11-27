@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Minus } from "lucide-react";
+import { Plus, RotateCcw } from "lucide-react";
 import type { CallToolResult } from "../../shared/types";
 
 interface CounterWidgetProps {
@@ -45,68 +45,81 @@ export function CounterWidget({ toolInput, toolResult, callTool }: CounterWidget
     }
   };
 
+  const handleReset = async () => {
+    setLoading(true);
+    try {
+      const result = await callTool("increment", { count, amount: -count });
+      if (result.structuredContent?.count !== undefined) {
+        const newCount = result.structuredContent.count as number;
+        setCount(newCount);
+        setLastChange(-count);
+        setTimeout(() => setLastChange(null), 1000);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-[300px] p-6">
+    <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
       {/* Counter Display */}
-      <div className="relative mb-8">
-        <div className="text-8xl font-bold tabular-nums tracking-tight text-foreground">
+      <div className="relative mb-12">
+        <div className="text-7xl font-light tabular-nums tracking-tighter text-foreground">
           {count}
         </div>
         {lastChange !== null && (
-          <span className={`absolute -right-8 top-2 text-lg font-semibold animate-pulse ${lastChange > 0 ? 'text-green-500' : 'text-red-500'}`}>
+          <span className={`absolute -right-12 top-3 text-sm font-medium text-muted-foreground`}>
             {lastChange > 0 ? `+${lastChange}` : lastChange}
           </span>
         )}
       </div>
 
       {/* Control Buttons */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         <Button
           variant="outline"
-          size="lg"
-          className="h-12 w-12 rounded-full p-0 transition-all hover:scale-110 hover:bg-red-50 hover:border-red-300 dark:hover:bg-red-950"
-          onClick={() => handleIncrement(-1)}
-          disabled={loading}
+          size="icon"
+          className="h-10 w-10"
+          onClick={handleReset}
+          disabled={loading || count === 0}
         >
-          <Minus className="h-5 w-5" />
+          <RotateCcw className="h-4 w-4" />
         </Button>
 
         <div className="flex gap-2">
           <Button
+            variant="ghost"
             size="lg"
-            className="h-14 px-6 rounded-full text-lg font-semibold transition-all hover:scale-105"
+            className="h-10 px-4"
             onClick={() => handleIncrement(1)}
             disabled={loading}
           >
-            <Plus className="h-5 w-5 mr-1" />
-            1
+            +1
           </Button>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="lg"
-            className="h-14 px-6 rounded-full text-lg font-semibold transition-all hover:scale-105"
+            className="h-10 px-4"
             onClick={() => handleIncrement(5)}
             disabled={loading}
           >
-            <Plus className="h-5 w-5 mr-1" />
-            5
+            +5
           </Button>
           <Button
-            variant="secondary"
+            variant="ghost"
             size="lg"
-            className="h-14 px-6 rounded-full text-lg font-semibold transition-all hover:scale-105"
+            className="h-10 px-4"
             onClick={() => handleIncrement(10)}
             disabled={loading}
           >
-            <Plus className="h-5 w-5 mr-1" />
-            10
+            +10
           </Button>
         </div>
       </div>
 
       {/* Loading indicator */}
       {loading && (
-        <div className="mt-6 text-sm text-muted-foreground animate-pulse">
+        <div className="mt-8 text-xs text-muted-foreground">
           Updating...
         </div>
       )}

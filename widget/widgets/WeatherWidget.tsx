@@ -20,14 +20,14 @@ interface WeatherWidgetProps {
   openLink: (url: string) => Promise<void>;
 }
 
-const conditionConfig: Record<string, { emoji: string; gradient: string }> = {
-  sunny: { emoji: "☀️", gradient: "from-amber-400 to-orange-500" },
-  cloudy: { emoji: "☁️", gradient: "from-slate-400 to-slate-500" },
-  rainy: { emoji: "🌧️", gradient: "from-blue-400 to-blue-600" },
-  snowy: { emoji: "❄️", gradient: "from-cyan-200 to-blue-300" },
-  stormy: { emoji: "⛈️", gradient: "from-slate-600 to-slate-800" },
-  windy: { emoji: "💨", gradient: "from-teal-400 to-cyan-500" },
-  default: { emoji: "🌤️", gradient: "from-sky-400 to-blue-500" },
+const conditionConfig: Record<string, { emoji: string }> = {
+  sunny: { emoji: "☀️" },
+  cloudy: { emoji: "☁️" },
+  rainy: { emoji: "🌧️" },
+  snowy: { emoji: "❄️" },
+  stormy: { emoji: "⛈️" },
+  windy: { emoji: "💨" },
+  default: { emoji: "🌤️" },
 };
 
 export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidgetProps) {
@@ -65,7 +65,7 @@ export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidget
   if (!weather) {
     return (
       <div className="flex items-center justify-center min-h-[300px]">
-        <div className="text-muted-foreground animate-pulse">Loading weather...</div>
+        <div className="text-sm text-muted-foreground">Loading weather...</div>
       </div>
     );
   }
@@ -73,96 +73,85 @@ export function WeatherWidget({ toolInput, toolResult, openLink }: WeatherWidget
   const config = conditionConfig[weather.condition.toLowerCase()] || conditionConfig.default;
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Main Weather Card */}
-      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${config.gradient} p-6 text-white shadow-lg`}>
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-white/90 mb-1">
-              <MapPin className="h-4 w-4" />
-              <span className="font-medium">{weather.location}</span>
-            </div>
-            <div className="text-7xl font-light tracking-tighter">
-              {weather.temperature}°
-            </div>
-            <div className="text-lg text-white/80 capitalize mt-1">
-              {weather.condition}
-            </div>
+    <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
+      {/* Location */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+        <MapPin className="h-3.5 w-3.5" />
+        <span>{weather.location}</span>
+      </div>
+      
+      {/* Temperature */}
+      <div className="relative mb-12">
+        <div className="flex items-baseline gap-1">
+          <div className="text-7xl font-light tabular-nums tracking-tighter text-foreground">
+            {weather.temperature}
           </div>
-          <div className="text-6xl">{config.emoji}</div>
+          <div className="text-xl text-muted-foreground">°</div>
         </div>
+        <div className="text-sm text-muted-foreground capitalize mt-2 text-center">
+          {weather.condition}
+        </div>
+      </div>
 
-        {/* Stats */}
-        <div className="flex gap-6 mt-6 pt-4 border-t border-white/20">
-          <div className="flex items-center gap-2">
-            <Droplets className="h-4 w-4 text-white/70" />
-            <span className="text-sm">
-              <span className="font-semibold">{weather.humidity}%</span>
-              <span className="text-white/70 ml-1">Humidity</span>
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Wind className="h-4 w-4 text-white/70" />
-            <span className="text-sm">
-              <span className="font-semibold">{weather.wind} km/h</span>
-              <span className="text-white/70 ml-1">Wind</span>
-            </span>
-          </div>
+      {/* Stats */}
+      <div className="flex gap-8 mb-12">
+        <div className="flex items-center gap-2 text-sm">
+          <Droplets className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-foreground">{weather.humidity}%</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Wind className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-foreground">{weather.wind} km/h</span>
         </div>
       </div>
 
       {/* Quick Links */}
-      <div className="space-y-2">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Detailed Forecast
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full transition-all hover:scale-105"
-            onClick={() =>
-              handleOpenLink(
-                `https://www.google.com/search?q=weather+${encodeURIComponent(weather.location)}`,
-                "Google"
-              )
-            }
-          >
-            <ExternalLink className="h-3 w-3 mr-1.5" />
-            Google
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full transition-all hover:scale-105"
-            onClick={() =>
-              handleOpenLink(
-                `https://www.accuweather.com/en/search-locations?query=${encodeURIComponent(weather.location)}`,
-                "AccuWeather"
-              )
-            }
-          >
-            <ExternalLink className="h-3 w-3 mr-1.5" />
-            AccuWeather
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="rounded-full transition-all hover:scale-105"
-            onClick={() =>
-              handleOpenLink(`https://www.windy.com/?${weather.location}`, "Windy")
-            }
-          >
-            <ExternalLink className="h-3 w-3 mr-1.5" />
-            Windy
-          </Button>
-        </div>
+      <div className="flex flex-wrap gap-2 justify-center">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8"
+          onClick={() =>
+            handleOpenLink(
+              `https://www.google.com/search?q=weather+${encodeURIComponent(weather.location)}`,
+              "Google"
+            )
+          }
+        >
+          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+          Google
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8"
+          onClick={() =>
+            handleOpenLink(
+              `https://www.accuweather.com/en/search-locations?query=${encodeURIComponent(weather.location)}`,
+              "AccuWeather"
+            )
+          }
+        >
+          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+          AccuWeather
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8"
+          onClick={() =>
+            handleOpenLink(`https://www.windy.com/?${weather.location}`, "Windy")
+          }
+        >
+          <ExternalLink className="h-3.5 w-3.5 mr-1.5" />
+          Windy
+        </Button>
       </div>
 
       {/* Success Toast */}
       {linkOpened && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-green-500 text-white rounded-full text-sm font-medium shadow-lg animate-in fade-in slide-in-from-bottom-2">
-          ✓ Opened {linkOpened}
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-foreground text-background rounded-md text-xs shadow-lg border border-border">
+          Opened {linkOpened}
         </div>
       )}
     </div>

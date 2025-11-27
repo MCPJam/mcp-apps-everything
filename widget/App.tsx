@@ -36,6 +36,15 @@ export function App() {
 
   const isDark = hostContext?.theme === "dark";
 
+  // Apply dark mode to document root
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [isDark]);
+
   // Detect widget type from structuredContent._widget
   const widgetType: WidgetType =
     (toolResult?.structuredContent?._widget as WidgetType) || null;
@@ -48,7 +57,7 @@ export function App() {
   // Loading state
   if (!isConnected) {
     return (
-      <div className={cn("min-h-screen flex items-center justify-center", isDark && "dark")}>
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Connecting...</div>
       </div>
     );
@@ -57,14 +66,14 @@ export function App() {
   // No widget detected
   if (!widgetType) {
     return (
-      <div className={cn("min-h-screen flex items-center justify-center", isDark && "dark")}>
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Waiting for tool result...</div>
       </div>
     );
   }
 
   return (
-    <div className={cn("min-h-screen", isDark && "dark")}>
+    <div className="min-h-screen">
       {widgetType === "counter" && (
         <CounterWidget
           toolInput={toolInput}

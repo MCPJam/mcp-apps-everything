@@ -5,7 +5,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, BarChart3, FileQuestion, RotateCcw, Check, X } from "lucide-react";
+import { Send, FileQuestion, Sparkles } from "lucide-react";
 
 interface ChatWidgetProps {
   sendMessage: (text: string) => Promise<void>;
@@ -18,11 +18,8 @@ interface SentMessage {
 }
 
 const quickActions = [
-  { label: "Analyze", message: "Please analyze the data shown above.", icon: BarChart3 },
-  { label: "Explain", message: "Can you explain how this works?", icon: FileQuestion },
-  { label: "Retry", message: "Please try that again with different parameters.", icon: RotateCcw },
-  { label: "Yes", message: "Yes, please proceed.", icon: Check },
-  { label: "No", message: "No, let's try something else.", icon: X },
+  { label: "What's MCP?", message: "What's MCP?", icon: FileQuestion },
+  { label: "Tell me a joke", message: "Tell me a funny joke about programming.", icon: Sparkles },
 ];
 
 export function ChatWidget({ sendMessage }: ChatWidgetProps) {
@@ -52,92 +49,67 @@ export function ChatWidget({ sendMessage }: ChatWidgetProps) {
   };
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Info Banner */}
-      <div className="rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200/50 dark:border-blue-800/50 p-4">
-        <div className="font-semibold text-sm mb-1">Send messages to the chat</div>
-        <div className="text-xs text-muted-foreground">
-          Messages sent from this widget will appear in the conversation as user input.
-        </div>
+    <div className="flex flex-col items-center justify-center min-h-[300px] p-8">
+      {/* Custom Message Input */}
+      <div className="flex gap-2 mb-8 w-full max-w-md">
+        <Input
+          type="text"
+          value={customMessage}
+          onChange={(e) => setCustomMessage(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && handleSendMessage(customMessage)}
+          placeholder="Type a message..."
+          disabled={sending}
+          className="flex-1"
+        />
+        <Button
+          onClick={() => handleSendMessage(customMessage)}
+          disabled={sending || !customMessage.trim()}
+          size="icon"
+          className="h-9 w-9"
+        >
+          <Send className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Quick Actions */}
-      <div className="space-y-2">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Quick Actions
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {quickActions.map((action) => {
-            const Icon = action.icon;
-            return (
-              <Button
-                key={action.label}
-                variant="outline"
-                size="sm"
-                className="rounded-full transition-all hover:scale-105"
-                onClick={() => handleSendMessage(action.message)}
-                disabled={sending}
-                title={action.message}
-              >
-                <Icon className="h-3 w-3 mr-1.5" />
-                {action.label}
-              </Button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Custom Message Input */}
-      <div className="space-y-2">
-        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-          Custom Message
-        </div>
-        <div className="flex gap-2">
-          <Input
-            type="text"
-            value={customMessage}
-            onChange={(e) => setCustomMessage(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSendMessage(customMessage)}
-            placeholder="Type a message..."
-            disabled={sending}
-            className="text-sm"
-          />
-          <Button
-            onClick={() => handleSendMessage(customMessage)}
-            disabled={sending || !customMessage.trim()}
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+      <div className="flex flex-wrap gap-2 justify-center mb-8">
+        {quickActions.map((action) => {
+          const Icon = action.icon;
+          return (
+            <Button
+              key={action.label}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+              onClick={() => handleSendMessage(action.message)}
+              disabled={sending}
+              title={action.message}
+            >
+              <Icon className="h-3.5 w-3.5 mr-1.5" />
+              {action.label}
+            </Button>
+          );
+        })}
       </div>
 
       {/* Sent Messages History */}
       {sentMessages.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            Sent Messages
-          </div>
-          <div className="space-y-2 max-h-[140px] overflow-auto">
-            {sentMessages.slice(-3).map((msg, i) => (
-              <div
-                key={i}
-                className={`p-3 rounded-lg border-l-2 bg-card ${
-                  msg.status === "sent"
-                    ? "border-l-green-500"
-                    : "border-l-red-500"
-                }`}
-              >
-                <div className="text-sm">{msg.text}</div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5">
-                  <span>{msg.timestamp.toLocaleTimeString()}</span>
-                  <span>•</span>
-                  <span className={msg.status === "sent" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}>
-                    {msg.status === "sent" ? "✓ Sent" : "✗ Failed"}
-                  </span>
-                </div>
+        <div className="w-full max-w-md space-y-2">
+          {sentMessages.slice(-3).map((msg, i) => (
+            <div
+              key={i}
+              className="p-3 rounded-md bg-muted/30 border border-border"
+            >
+              <div className="text-sm text-foreground">{msg.text}</div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mt-2">
+                <span>{msg.timestamp.toLocaleTimeString()}</span>
+                <span className="text-muted-foreground/50">•</span>
+                <span className={msg.status === "sent" ? "text-foreground/60" : "text-destructive"}>
+                  {msg.status === "sent" ? "Sent" : "Failed"}
+                </span>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

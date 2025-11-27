@@ -66,144 +66,141 @@ export function NotesWidget({ readResource, callTool }: NotesWidgetProps) {
     const content = result.contents?.[0];
     if (!content) return null;
 
-    try {
-      const data = JSON.parse(content.text || "");
-      if (Array.isArray(data)) {
-        return (
-          <div className="space-y-2">
-            {data.map((item, i) => (
-              <button
-                key={i}
-                onClick={() => item.id && fetchResource(`notes://${item.id}`)}
-                className="w-full text-left p-3 rounded-lg bg-card border border-border hover:border-primary/50 hover:bg-accent transition-all group"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="font-medium">{item.title || `Item ${i + 1}`}</div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                </div>
-                {item.createdAt && (
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {new Date(item.createdAt).toLocaleDateString()}
+      try {
+        const data = JSON.parse(content.text || "");
+        if (Array.isArray(data)) {
+          return (
+            <div className="space-y-2">
+              {data.map((item, i) => (
+                <button
+                  key={i}
+                  onClick={() => item.id && fetchResource(`notes://${item.id}`)}
+                  className="w-full text-left p-3 rounded-md border border-border hover:bg-muted/50 transition-colors group"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm">{item.title || `Item ${i + 1}`}</div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                   </div>
-                )}
-              </button>
-            ))}
+                  {item.createdAt && (
+                    <div className="text-xs text-muted-foreground mt-1.5">
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </div>
+                  )}
+                </button>
+              ))}
+            </div>
+          );
+        }
+        return (
+          <div className="space-y-3">
+            {data.title && (
+              <div className="font-medium text-base">{data.title}</div>
+            )}
+            {data.content && (
+              <div className="text-sm text-foreground/80 whitespace-pre-wrap leading-relaxed">{data.content}</div>
+            )}
+            {data.createdAt && (
+              <div className="text-xs text-muted-foreground pt-3 border-t border-border">
+                {new Date(data.createdAt).toLocaleString()}
+              </div>
+            )}
           </div>
         );
+      } catch {
+        return <pre className="whitespace-pre-wrap text-xs font-mono text-foreground">{content.text}</pre>;
       }
-      return (
-        <div className="p-4 rounded-lg bg-card border border-border">
-          {data.title && (
-            <div className="font-semibold text-lg mb-2">{data.title}</div>
-          )}
-          {data.content && (
-            <div className="text-muted-foreground whitespace-pre-wrap">{data.content}</div>
-          )}
-          {data.createdAt && (
-            <div className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
-              Created {new Date(data.createdAt).toLocaleString()}
-            </div>
-          )}
-        </div>
-      );
-    } catch {
-      return <pre className="whitespace-pre-wrap text-sm p-4 bg-card rounded-lg">{content.text}</pre>;
-    }
   };
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Search Bar */}
-      <div className="flex gap-2">
-        <Input
-          type="text"
-          value={uri}
-          onChange={(e) => setUri(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && fetchResource(uri)}
-          placeholder="notes://all"
-          className="font-mono text-sm"
-        />
-        <Button onClick={() => fetchResource(uri)} disabled={loading}>
-          {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
-        </Button>
+    <div className="flex flex-col items-center min-h-[300px] p-8">
+      {/* Header */}
+      <div className="text-center mb-8">
+        <div className="text-lg font-light text-foreground mb-2">Read Resources</div>
+        <div className="text-xs text-muted-foreground max-w-md">
+          Resources are identified by URIs. Enter a URI below to read its content.
+        </div>
       </div>
 
-      {/* Quick Access */}
-      <div className="flex flex-wrap gap-2">
-        {presetResources.map((preset) => {
-          const Icon = preset.icon;
-          return (
-            <Button
-              key={preset.uri}
-              variant={uri === preset.uri ? "default" : "outline"}
-              size="sm"
-              className="rounded-full transition-all hover:scale-105"
-              onClick={() => fetchResource(preset.uri)}
-              disabled={loading}
-            >
-              <Icon className="h-3 w-3 mr-1.5" />
-              {preset.label}
-            </Button>
-          );
-        })}
-      </div>
-
-      {/* Create Note */}
-      {callTool && (
+      {/* Resource URI Input */}
+      <div className="w-full max-w-lg mb-6">
+        <div className="text-xs text-muted-foreground mb-2 px-1">Resource URI</div>
         <div className="flex gap-2">
           <Input
             type="text"
-            value={newNoteTitle}
-            onChange={(e) => setNewNoteTitle(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && createNote()}
-            placeholder="New note title..."
-            disabled={creatingNote}
-            className="text-sm"
+            value={uri}
+            onChange={(e) => setUri(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && fetchResource(uri)}
+            placeholder="notes://all"
+            className="font-mono flex-1"
           />
-          <Button
-            variant="secondary"
-            onClick={createNote}
-            disabled={creatingNote || !newNoteTitle.trim()}
+          <Button 
+            onClick={() => fetchResource(uri)} 
+            disabled={loading || !uri.trim()} 
+            size="icon" 
+            className="h-9 w-9"
           >
-            {creatingNote ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            {loading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <BookOpen className="h-4 w-4" />}
           </Button>
         </div>
-      )}
+      </div>
+
+      {/* Quick Access */}
+      <div className="w-full max-w-lg mb-8">
+        <div className="text-xs text-muted-foreground mb-2 px-1">Quick access</div>
+        <div className="flex flex-wrap gap-2">
+          {presetResources.map((preset) => {
+            const Icon = preset.icon;
+            return (
+              <Button
+                key={preset.uri}
+                variant={uri === preset.uri ? "default" : "ghost"}
+                size="sm"
+                className="h-8"
+                onClick={() => fetchResource(preset.uri)}
+                disabled={loading}
+              >
+                <Icon className="h-3.5 w-3.5 mr-1.5" />
+                {preset.label}
+              </Button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Response Area */}
-      <div className="rounded-xl bg-muted/50 border border-border overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-border bg-muted/50">
-          <span className="text-xs font-medium text-muted-foreground">Response</span>
+      <div className="w-full max-w-lg space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-muted-foreground px-1">Resource content</div>
           {response && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => setShowRaw(!showRaw)}
-              className="h-6 text-xs gap-1"
+              className="h-7 text-xs"
             >
-              <Code className="h-3 w-3" />
-              {showRaw ? "Pretty" : "JSON"}
+              <Code className="h-3 w-3 mr-1" />
+              {showRaw ? "Pretty" : "Raw JSON"}
             </Button>
           )}
         </div>
 
-        <div className="p-3 min-h-[120px] max-h-[200px] overflow-auto">
+        <div className="min-h-[180px] max-h-[300px] overflow-auto p-4 rounded-md border border-border bg-muted/20">
           {loading && (
-            <div className="flex items-center justify-center h-[100px] text-muted-foreground">
-              <RefreshCw className="h-5 w-5 animate-spin mr-2" />
-              Loading...
+            <div className="flex items-center justify-center h-[180px] text-muted-foreground text-sm">
+              <RefreshCw className="h-4 w-4 animate-spin mr-2" />
+              Reading resource...
             </div>
           )}
 
           {error && (
-            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+            <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm border border-destructive/20">
               {error}
             </div>
           )}
 
           {!loading && !error && response && (
             showRaw ? (
-              <pre className="text-xs whitespace-pre-wrap font-mono">
+              <pre className="text-xs whitespace-pre-wrap font-mono text-foreground">
                 {JSON.stringify(response, null, 2)}
               </pre>
             ) : (
@@ -212,12 +209,41 @@ export function NotesWidget({ readResource, callTool }: NotesWidgetProps) {
           )}
 
           {!loading && !error && !response && (
-            <div className="flex items-center justify-center h-[100px] text-muted-foreground text-sm">
-              Select a resource to view
+            <div className="flex flex-col items-center justify-center h-[180px] text-center">
+              <BookOpen className="h-8 w-8 text-muted-foreground/50 mb-3" />
+              <div className="text-sm text-muted-foreground mb-1">No resource selected</div>
+              <div className="text-xs text-muted-foreground/70">Enter a URI above to read a resource</div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Create Note (optional) */}
+      {callTool && (
+        <div className="w-full max-w-lg mt-6 pt-6 border-t border-border">
+          <div className="text-xs text-muted-foreground mb-2 px-1">Create new note</div>
+          <div className="flex gap-2">
+            <Input
+              type="text"
+              value={newNoteTitle}
+              onChange={(e) => setNewNoteTitle(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && createNote()}
+              placeholder="Note title..."
+              disabled={creatingNote}
+              className="flex-1"
+            />
+            <Button
+              variant="ghost"
+              onClick={createNote}
+              disabled={creatingNote || !newNoteTitle.trim()}
+              size="icon"
+              className="h-9 w-9"
+            >
+              {creatingNote ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
