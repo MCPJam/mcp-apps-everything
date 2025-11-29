@@ -11,8 +11,15 @@
  * - ui/message: Message Widget
  */
 
-import { useEffect } from "react";
-import { useApp } from "./hooks/useApp";
+import { useEffect, useState } from "react";
+import {
+  useApp,
+  App,
+  McpUiToolInputNotificationSchema,
+  McpUiToolResultNotificationSchema,
+  McpUiHostContextChangedNotificationSchema,
+} from "@modelcontextprotocol/ext-apps/react";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { ToolCallWidget } from "./widgets/ToolCallWidget";
 import { OpenLinkWidget } from "./widgets/OpenLinkWidget";
 import { ReadResourceWidget } from "./widgets/ReadResourceWidget";
@@ -20,18 +27,49 @@ import { MessageWidget } from "./widgets/MessageWidget";
 
 type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | null;
 
+interface ToolInput {
+  arguments: Record<string, unknown>;
+}
+
+interface ToolResult {
+  content?: CallToolResult["content"];
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+}
+
+interface HostContext {
+  theme?: "light" | "dark" | "system";
+}
+
 export function App() {
-  const {
-    isConnected,
-    error,
-    hostContext,
-    toolInput,
-    toolResult,
-    callTool,
-    readResource,
-    sendMessage,
-    openLink,
-  } = useApp();
+  // Local state for notifications
+  const [toolInput, setToolInput] = useState<ToolInput | null>(null);
+  const [toolResult, setToolResult] = useState<ToolResult | null>(null);
+  const [hostContext, setHostContext] = useState<HostContext | null>(null);
+
+  // Use the SDK directly
+  const { app, isConnected, error } = useApp({
+    appInfo: { name: "mcp-apps-everything", version: "0.0.1" },
+    capabilities: {},
+    onAppCreated: (app: App) => {
+      // Register notification handlers before connection
+      app.setNotificationHandler(McpUiToolInputNotificationSchema, (n) => {
+        setToolInput({ arguments: n.params.arguments ?? {} });
+      });
+
+      app.setNotificationHandler(McpUiToolResultNotificationSchema, (n) => {
+        setToolResult({
+          content: n.params.content,
+          structuredContent: n.params.structuredContent,
+          isError: n.params.isError,
+        });
+      });
+
+      app.setNotificationHandler(McpUiHostContextChangedNotificationSchema, (n) => {
+        setHostContext((prev) => ({ ...prev, ...n.params }));
+      });
+    },
+  });
 
   const isDark = hostContext?.theme === "dark";
 
@@ -80,29 +118,15 @@ export function App() {
   return (
     <div className="min-h-screen">
       {widgetType === "tool-call" && (
-        <ToolCallWidget
-          toolInput={toolInput}
-          toolResult={toolResult}
-          callTool={callTool}
-        />
+        <ToolCallWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
       {widgetType === "open-link" && (
-        <OpenLinkWidget
-          toolInput={toolInput}
-          toolResult={toolResult}
-          openLink={openLink}
-        />
+        <OpenLinkWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
       {widgetType === "read-resource" && (
-        <ReadResourceWidget
-          toolInput={toolInput}
-          toolResult={toolResult}
-          readResource={readResource}
-        />
+        <ReadResourceWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
-      {widgetType === "message" && (
-        <MessageWidget sendMessage={sendMessage} />
-      )}
+      {widgetType === "message" && <MessageWidget app={app!} />}
     </div>
   );
 }

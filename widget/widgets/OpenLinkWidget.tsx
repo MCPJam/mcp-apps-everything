@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ExternalLink, Droplets, Wind, MapPin, Loader2 } from "lucide-react";
+import type { App } from "@modelcontextprotocol/ext-apps/react";
 
 interface WeatherData {
   temperature: number;
@@ -14,9 +15,9 @@ interface WeatherData {
 }
 
 interface OpenLinkWidgetProps {
+  app: App;
   toolInput: { arguments: Record<string, unknown> } | null;
   toolResult: { structuredContent?: Record<string, unknown> } | null;
-  openLink: (url: string) => Promise<void>;
 }
 
 // Map Open-Meteo weather codes to human-readable conditions
@@ -31,7 +32,7 @@ function getWeatherCondition(code: number): string {
   return "Unknown";
 }
 
-export function OpenLinkWidget({ toolInput, toolResult, openLink }: OpenLinkWidgetProps) {
+export function OpenLinkWidget({ app, toolInput, toolResult }: OpenLinkWidgetProps) {
   const [location, setLocation] = useState<string | null>(null);
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -97,7 +98,8 @@ export function OpenLinkWidget({ toolInput, toolResult, openLink }: OpenLinkWidg
 
   const handleOpenLink = async (url: string, label: string) => {
     try {
-      await openLink(url);
+      // Open link directly via the SDK
+      await app.sendOpenLink({ url });
       setLinkOpened(label);
       setTimeout(() => setLinkOpened(null), 2000);
     } catch (err) {

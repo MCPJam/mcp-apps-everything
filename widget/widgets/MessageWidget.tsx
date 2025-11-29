@@ -6,9 +6,10 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Sparkles } from "lucide-react";
+import type { App } from "@modelcontextprotocol/ext-apps/react";
 
 interface MessageWidgetProps {
-  sendMessage: (text: string) => Promise<void>;
+  app: App;
 }
 
 const suggestions = [
@@ -16,7 +17,7 @@ const suggestions = [
   { label: "Tell me a joke", message: "Tell me a funny joke about programming." },
 ];
 
-export function MessageWidget({ sendMessage }: MessageWidgetProps) {
+export function MessageWidget({ app }: MessageWidgetProps) {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -25,7 +26,11 @@ export function MessageWidget({ sendMessage }: MessageWidgetProps) {
 
     setSending(true);
     try {
-      await sendMessage(text);
+      // Send message directly via the SDK
+      await app.sendMessage({
+        role: "user",
+        content: [{ type: "text", text }],
+      });
       setMessage("");
     } finally {
       setSending(false);

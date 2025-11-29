@@ -5,15 +5,16 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { RotateCcw } from "lucide-react";
-import type { CallToolResult } from "../hooks/useApp";
+import type { App } from "@modelcontextprotocol/ext-apps/react";
+import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 
 interface ToolCallWidgetProps {
+  app: App;
   toolInput: { arguments: Record<string, unknown> } | null;
   toolResult: { structuredContent?: Record<string, unknown> } | null;
-  callTool: (name: string, args: Record<string, unknown>) => Promise<CallToolResult>;
 }
 
-export function ToolCallWidget({ toolInput, toolResult, callTool }: ToolCallWidgetProps) {
+export function ToolCallWidget({ app, toolInput, toolResult }: ToolCallWidgetProps) {
   const [count, setCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [lastChange, setLastChange] = useState<number | null>(null);
@@ -33,7 +34,11 @@ export function ToolCallWidget({ toolInput, toolResult, callTool }: ToolCallWidg
   const handleIncrement = async (amount: number) => {
     setLoading(true);
     try {
-      const result = await callTool("increment", { count, amount });
+      // Call the server tool directly via the SDK
+      const result: CallToolResult = await app.callServerTool({
+        name: "increment",
+        arguments: { count, amount },
+      });
       if (result.structuredContent?.count !== undefined) {
         const newCount = result.structuredContent.count as number;
         setCount(newCount);
@@ -48,7 +53,10 @@ export function ToolCallWidget({ toolInput, toolResult, callTool }: ToolCallWidg
   const handleReset = async () => {
     setLoading(true);
     try {
-      const result = await callTool("increment", { count, amount: -count });
+      const result: CallToolResult = await app.callServerTool({
+        name: "increment",
+        arguments: { count, amount: -count },
+      });
       if (result.structuredContent?.count !== undefined) {
         const newCount = result.structuredContent.count as number;
         setCount(newCount);
@@ -126,4 +134,3 @@ export function ToolCallWidget({ toolInput, toolResult, callTool }: ToolCallWidg
     </div>
   );
 }
-

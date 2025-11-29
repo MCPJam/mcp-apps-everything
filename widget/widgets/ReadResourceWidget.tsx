@@ -5,7 +5,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { BookOpen } from "lucide-react";
-import type { ReadResourceResult } from "../hooks/useApp";
+import type { App } from "@modelcontextprotocol/ext-apps/react";
 
 interface Resource {
   id: string;
@@ -19,12 +19,12 @@ interface AvailableResource {
 }
 
 interface ReadResourceWidgetProps {
+  app: App;
   toolInput: { arguments: Record<string, unknown> } | null;
   toolResult: { structuredContent?: Record<string, unknown> } | null;
-  readResource: (uri: string) => Promise<ReadResourceResult>;
 }
 
-export function ReadResourceWidget({ toolResult, readResource }: ReadResourceWidgetProps) {
+export function ReadResourceWidget({ app, toolResult }: ReadResourceWidgetProps) {
   const [availableResources, setAvailableResources] = useState<AvailableResource[]>([]);
   const [currentResource, setCurrentResource] = useState<Resource | null>(null);
   const [loading, setLoading] = useState(false);
@@ -41,10 +41,9 @@ export function ReadResourceWidget({ toolResult, readResource }: ReadResourceWid
     setSelectedId(resourceId);
 
     try {
-      const result = await readResource(`tips://${resourceId}`);
-      // ReadResourceResult has { contents: Array<{ text?: string, ... }> }
-      const contents = result?.contents;
-      const textContent = contents?.[0]?.text;
+      // Read the resource directly via the SDK
+      const result = await app.readServerResource({ uri: `tips://${resourceId}` });
+      const textContent = result?.contents?.[0]?.text;
 
       if (textContent) {
         const resource = JSON.parse(textContent);
