@@ -71,6 +71,16 @@ export function App() {
     },
   });
 
+  // Get initial host context once connected
+  useEffect(() => {
+    if (isConnected && app) {
+      const initialContext = app.getHostContext();
+      if (initialContext) {
+        setHostContext(initialContext);
+      }
+    }
+  }, [isConnected, app]);
+
   const isDark = hostContext?.theme === "dark";
 
   // Apply dark mode to document root
