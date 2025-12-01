@@ -14,6 +14,22 @@ const PORT = process.env.PORT || 3001;
 // Resource URI meta key per SEP-1865
 const RESOURCE_URI_META_KEY = "ui/resourceUri";
 
+// CSP configurations for CSP test widget (SEP-1865)
+
+// STRICT: Empty arrays = all external requests BLOCKED
+const CSP_STRICT_CONFIG = {
+  connectDomains: [] as string[],
+  resourceDomains: [] as string[],
+};
+
+// PERMISSIVE: Allow specific test domains
+const CSP_PERMISSIVE_CONFIG = {
+  // httpbin.org is CORS-friendly for testing
+  connectDomains: ["https://httpbin.org", "https://jsonplaceholder.typicode.com"],
+  // picsum.photos redirects to fastly.picsum.photos, so we need wildcard
+  resourceDomains: ["https://*.picsum.photos", "https://picsum.photos", "https://i.imgur.com"],
+};
+
 // Session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
@@ -55,9 +71,32 @@ function createServer() {
   // UI RESOURCES (ui:// scheme)
   // =====================================
 
-  // Single widget resource that handles all demos
+  // Main widget with STRICT CSP (blocks all external requests)
   server.resource("main-widget", "ui://main", { mimeType: "text/html+mcp" }, async () => ({
-    contents: [{ uri: "ui://main", mimeType: "text/html+mcp", text: getWidgetHtml() }],
+    contents: [{
+      uri: "ui://main",
+      mimeType: "text/html+mcp",
+      text: getWidgetHtml(),
+      _meta: {
+        ui: {
+          csp: CSP_STRICT_CONFIG,
+        }
+      }
+    }],
+  }));
+
+  // Widget with PERMISSIVE CSP (allows specific test domains)
+  server.resource("permissive-widget", "ui://main-permissive", { mimeType: "text/html+mcp" }, async () => ({
+    contents: [{
+      uri: "ui://main-permissive",
+      mimeType: "text/html+mcp",
+      text: getWidgetHtml(),
+      _meta: {
+        ui: {
+          csp: CSP_PERMISSIVE_CONFIG,
+        }
+      }
+    }],
   }));
 
   // Legacy counter resource for backwards compatibility
@@ -197,6 +236,58 @@ function createServer() {
     })
   );
 
+  // CSP Test Widget (STRICT) - All external requests blocked
+  server.registerTool(
+    "csp-test",
+    {
+      title: "CSP Test (Strict)",
+      description: "Tests STRICT CSP - all external requests should be BLOCKED",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+    },
+    async (): Promise<CallToolResult> => {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `CSP Test Suite (STRICT MODE). All external connections and resources should be BLOCKED.`,
+          },
+        ],
+        structuredContent: {
+          _widget: "csp-test",
+          csp: CSP_STRICT_CONFIG,
+          mode: "strict",
+        },
+      };
+    }
+  );
+
+  // CSP Test Widget (PERMISSIVE) - Specific domains allowed
+  server.registerTool(
+    "csp-test-permissive",
+    {
+      title: "CSP Test (Permissive)",
+      description: "Tests PERMISSIVE CSP - specific domains should be ALLOWED (jsonplaceholder.typicode.com, picsum.photos)",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main-permissive" },
+    },
+    async (): Promise<CallToolResult> => {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `CSP Test Suite (PERMISSIVE MODE). Allowed: jsonplaceholder.typicode.com (fetch), picsum.photos (images).`,
+          },
+        ],
+        structuredContent: {
+          _widget: "csp-test",
+          csp: CSP_PERMISSIVE_CONFIG,
+          mode: "permissive",
+        },
+      };
+    }
+  );
+
   // =====================================
   // UTILITY TOOLS (called by widgets)
   // =====================================
@@ -278,6 +369,7 @@ app.listen(PORT, () => {
 ║    • open-link      - ui/open-link demo                       ║
 ║    • read-resource  - resources/read demo                     ║
 ║    • message        - ui/message demo                         ║
+║    • csp-test       - CSP enforcement demo                    ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Utility Tools:                                               ║
 ║    • increment     - Counter increment                        ║

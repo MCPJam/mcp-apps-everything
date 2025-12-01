@@ -24,8 +24,9 @@ import { ToolCallWidget } from "./widgets/ToolCallWidget";
 import { OpenLinkWidget } from "./widgets/OpenLinkWidget";
 import { ReadResourceWidget } from "./widgets/ReadResourceWidget";
 import { MessageWidget } from "./widgets/MessageWidget";
+import { CspTestWidget } from "./widgets/CspTestWidget";
 
-type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | null;
+type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | null;
 
 interface ToolInput {
   arguments: Record<string, unknown>;
@@ -137,6 +138,9 @@ export function App() {
         <ReadResourceWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
       {widgetType === "message" && <MessageWidget app={app!} />}
+      {widgetType === "csp-test" && (
+        <CspTestWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
+      )}
     </div>
   );
 }
