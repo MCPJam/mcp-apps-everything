@@ -42,7 +42,7 @@ interface HostContext {
   theme?: "light" | "dark" | "system";
 }
 
-export function App() {
+export function AppComponent() {
   // Local state for notifications
   const [toolInput, setToolInput] = useState<ToolInput | null>(null);
   const [toolResult, setToolResult] = useState<ToolResult | null>(null);
@@ -71,16 +71,6 @@ export function App() {
       });
     },
   });
-
-  // Get initial host context once connected
-  useEffect(() => {
-    if (isConnected && app) {
-      const initialContext = app.getHostContext();
-      if (initialContext) {
-        setHostContext(initialContext);
-      }
-    }
-  }, [isConnected, app]);
 
   const isDark = hostContext?.theme === "dark";
 
