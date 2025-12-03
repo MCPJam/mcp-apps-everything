@@ -288,6 +288,28 @@ function createServer() {
     }
   );
 
+  // Size Change Widget - Demonstrates ui/size-change
+  server.registerTool(
+    "size-change",
+    {
+      title: "Size Change Demo",
+      description: "Interactive widget that demonstrates the ui/size-change API for dynamically changing widget height",
+      inputSchema: {
+        height: z.number().default(300).describe("Initial height in pixels"),
+      },
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+    },
+    async ({ height }): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `Size change widget initialized at ${height}px. Use controls to change the height dynamically.`,
+        },
+      ],
+      structuredContent: { _widget: "size-change", height, timestamp: Date.now() },
+    })
+  );
+
   // =====================================
   // UTILITY TOOLS (called by widgets)
   // =====================================
@@ -370,6 +392,7 @@ app.listen(PORT, () => {
 ║    • read-resource  - resources/read demo                     ║
 ║    • message        - ui/message demo                         ║
 ║    • csp-test       - CSP enforcement demo                    ║
+║    • size-change    - ui/size-change demo                     ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Utility Tools:                                               ║
 ║    • increment     - Counter increment                        ║
