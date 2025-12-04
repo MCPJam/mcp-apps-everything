@@ -9,12 +9,13 @@
  * - ui/open-link: Open Link Widget
  * - resources/read: Read Resource Widget
  * - ui/message: Message Widget
+ * - ui/size-change: Size Change Widget
  */
 
 import { useEffect, useState } from "react";
 import {
-  useApp,
   App,
+  PostMessageTransport,
   McpUiToolInputNotificationSchema,
   McpUiToolResultNotificationSchema,
   McpUiHostContextChangedNotificationSchema,
@@ -25,8 +26,9 @@ import { OpenLinkWidget } from "./widgets/OpenLinkWidget";
 import { ReadResourceWidget } from "./widgets/ReadResourceWidget";
 import { MessageWidget } from "./widgets/MessageWidget";
 import { CspTestWidget } from "./widgets/CspTestWidget";
+import { SizeChangeWidget } from "./widgets/SizeChangeWidget";
 
-type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | null;
+type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | "size-change" | null;
 
 interface ToolInput {
   arguments: Record<string, unknown>;
@@ -43,34 +45,65 @@ interface HostContext {
 }
 
 export function AppComponent() {
+  // App connection state
+  const [app, setApp] = useState<App | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+
   // Local state for notifications
   const [toolInput, setToolInput] = useState<ToolInput | null>(null);
   const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [hostContext, setHostContext] = useState<HostContext | null>(null);
 
-  // Use the SDK directly
-  const { app, isConnected, error } = useApp({
-    appInfo: { name: "mcp-apps-everything", version: "0.0.1" },
-    capabilities: {},
-    onAppCreated: (app: App) => {
-      // Register notification handlers before connection
-      app.setNotificationHandler(McpUiToolInputNotificationSchema, (n) => {
-        setToolInput({ arguments: n.params.arguments ?? {} });
-      });
+  // Create and connect App manually with autoResize disabled
+  useEffect(() => {
+    let mounted = true;
 
-      app.setNotificationHandler(McpUiToolResultNotificationSchema, (n) => {
-        setToolResult({
-          content: n.params.content,
-          structuredContent: n.params.structuredContent,
-          isError: n.params.isError,
+    async function connect() {
+      try {
+        const myApp = new App(
+          { name: "mcp-apps-everything", version: "0.0.1" },
+          {}, // capabilities
+          { autoResize: false }
+        );
+
+        // Register notification handlers BEFORE connecting
+        myApp.setNotificationHandler(McpUiToolInputNotificationSchema, (n) => {
+          setToolInput({ arguments: n.params.arguments ?? {} });
         });
-      });
 
-      app.setNotificationHandler(McpUiHostContextChangedNotificationSchema, (n) => {
-        setHostContext((prev) => ({ ...prev, ...n.params }));
-      });
-    },
-  });
+        myApp.setNotificationHandler(McpUiToolResultNotificationSchema, (n) => {
+          setToolResult({
+            content: n.params.content,
+            structuredContent: n.params.structuredContent,
+            isError: n.params.isError,
+          });
+        });
+
+        myApp.setNotificationHandler(McpUiHostContextChangedNotificationSchema, (n) => {
+          setHostContext((prev) => ({ ...prev, ...n.params }));
+        });
+
+        const transport = new PostMessageTransport(window.parent);
+        await myApp.connect(transport);
+
+        if (mounted) {
+          setApp(myApp);
+          setIsConnected(true);
+        }
+      } catch (err) {
+        if (mounted) {
+          setError(err instanceof Error ? err : new Error("Failed to connect"));
+        }
+      }
+    }
+
+    connect();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const isDark = hostContext?.theme === "dark";
 
@@ -90,7 +123,7 @@ export function AppComponent() {
   // Loading state or error
   if (!isConnected) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="flex items-center justify-center p-4">
         <div className="text-center">
           {error ? (
             <div className="text-red-500 text-sm">
@@ -117,7 +150,7 @@ export function AppComponent() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div>
       {widgetType === "tool-call" && (
         <ToolCallWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
@@ -130,6 +163,9 @@ export function AppComponent() {
       {widgetType === "message" && <MessageWidget app={app!} />}
       {widgetType === "csp-test" && (
         <CspTestWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
+      )}
+      {widgetType === "size-change" && (
+        <SizeChangeWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
     </div>
   );
