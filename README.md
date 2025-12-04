@@ -21,7 +21,7 @@ npm run build   # Build widget to dist/
 npm start       # Start MCP server
 ```
 
-Server runs at `http://localhost:3001/mcp`
+Server runs at `http://localhost:4001/mcp`
 
 ## Development
 
@@ -117,7 +117,7 @@ npm run dev     # Run server + vite dev (hot reload)
 
 1. Start the server: `npm start`
 2. Open MCPJam Inspector
-3. Connect to `http://localhost:3001/mcp` (Streamable HTTP)
+3. Connect to `http://localhost:4001/mcp` (Streamable HTTP)
 4. Go to Tools tab and run any tool
 5. The interactive widget will render in place of raw JSON
 

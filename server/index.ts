@@ -9,7 +9,7 @@ import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4001;
 
 // Resource URI meta key per SEP-1865
 const RESOURCE_URI_META_KEY = "ui/resourceUri";

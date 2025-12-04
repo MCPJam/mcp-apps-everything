@@ -6,6 +6,9 @@ import path from "path";
 
 export default defineConfig({
   plugins: [react(), tailwindcss(), viteSingleFile()],
+  server: {
+    port: 5174,
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./widget"),
