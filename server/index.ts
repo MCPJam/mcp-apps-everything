@@ -27,7 +27,16 @@ const CSP_PERMISSIVE_CONFIG = {
   // httpbin.org is CORS-friendly for testing
   connectDomains: ["https://httpbin.org", "https://jsonplaceholder.typicode.com"],
   // picsum.photos redirects to fastly.picsum.photos, so we need wildcard
-  resourceDomains: ["https://*.picsum.photos", "https://picsum.photos", "https://i.imgur.com"],
+  // Script CDNs: esm.sh, jsdelivr, unpkg (for testing external script loading)
+  resourceDomains: [
+    "https://*.picsum.photos",
+    "https://picsum.photos",
+    "https://i.imgur.com",
+    // External script CDNs (tests sandbox-proxy CSP fix)
+    "https://esm.sh",
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+  ],
 };
 
 // Session management
@@ -241,7 +250,7 @@ function createServer() {
     "csp-test",
     {
       title: "CSP Test (Strict)",
-      description: "Tests STRICT CSP - all external requests should be BLOCKED",
+      description: "Tests STRICT CSP - external scripts (esm.sh, jsdelivr, unpkg), fetch, and images should be BLOCKED",
       inputSchema: {},
       _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
     },
@@ -250,7 +259,7 @@ function createServer() {
         content: [
           {
             type: "text",
-            text: `CSP Test Suite (STRICT MODE). All external connections and resources should be BLOCKED.`,
+            text: `CSP Test Suite (STRICT MODE). All external scripts, connections and resources should be BLOCKED.`,
           },
         ],
         structuredContent: {
@@ -267,7 +276,7 @@ function createServer() {
     "csp-test-permissive",
     {
       title: "CSP Test (Permissive)",
-      description: "Tests PERMISSIVE CSP - specific domains should be ALLOWED (jsonplaceholder.typicode.com, picsum.photos)",
+      description: "Tests PERMISSIVE CSP - external scripts (esm.sh, jsdelivr, unpkg), fetch, and images should be ALLOWED",
       inputSchema: {},
       _meta: { [RESOURCE_URI_META_KEY]: "ui://main-permissive" },
     },
@@ -276,7 +285,7 @@ function createServer() {
         content: [
           {
             type: "text",
-            text: `CSP Test Suite (PERMISSIVE MODE). Allowed: jsonplaceholder.typicode.com (fetch), picsum.photos (images).`,
+            text: `CSP Test Suite (PERMISSIVE MODE). External scripts (esm.sh, jsdelivr, unpkg), API fetch, and images should be ALLOWED.`,
           },
         ],
         structuredContent: {
@@ -307,6 +316,46 @@ function createServer() {
         },
       ],
       structuredContent: { _widget: "size-change", height, timestamp: Date.now() },
+    })
+  );
+
+  // Locale & Timezone Widget - Tests locale and timezone from host context
+  server.registerTool(
+    "locale-timezone",
+    {
+      title: "Locale & Timezone Demo",
+      description: "Tests locale and timezone support from host context. Displays current locale/timezone and formats dates, times, and numbers accordingly.",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `Locale and Timezone test widget. Displays host locale/timezone and formatted dates/numbers.`,
+        },
+      ],
+      structuredContent: { _widget: "locale-timezone", timestamp: Date.now() },
+    })
+  );
+
+  // Host Context Widget - Comprehensive display of ALL host context fields
+  server.registerTool(
+    "host-context",
+    {
+      title: "Host Context Demo",
+      description: "Comprehensive display of ALL host context fields (theme, locale, timeZone, displayMode, viewport, platform, etc.). Reacts to changes in real-time.",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `Host Context test widget. Displays all host context fields and reacts to changes.`,
+        },
+      ],
+      structuredContent: { _widget: "host-context", timestamp: Date.now() },
     })
   );
 
@@ -387,12 +436,14 @@ app.listen(PORT, () => {
 ║  Endpoint: http://localhost:${PORT}/mcp                          ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Tools with UI:                                               ║
-║    • tool-call      - tools/call demo                         ║
-║    • open-link      - ui/open-link demo                       ║
-║    • read-resource  - resources/read demo                     ║
-║    • message        - ui/message demo                         ║
-║    • csp-test       - CSP enforcement demo                    ║
-║    • size-change    - ui/size-change demo                     ║
+║    • tool-call       - tools/call demo                        ║
+║    • open-link       - ui/open-link demo                      ║
+║    • read-resource   - resources/read demo                    ║
+║    • message         - ui/message demo                        ║
+║    • csp-test        - CSP enforcement demo                   ║
+║    • size-change     - ui/size-change demo                    ║
+║    • locale-timezone - locale/timezone demo                   ║
+║    • host-context    - host context fields demo               ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Utility Tools:                                               ║
 ║    • increment     - Counter increment                        ║

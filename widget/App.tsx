@@ -27,8 +27,10 @@ import { ReadResourceWidget } from "./widgets/ReadResourceWidget";
 import { MessageWidget } from "./widgets/MessageWidget";
 import { CspTestWidget } from "./widgets/CspTestWidget";
 import { SizeChangeWidget } from "./widgets/SizeChangeWidget";
+import { LocaleTimezoneWidget } from "./widgets/LocaleTimezoneWidget";
+import { HostContextWidget } from "./widgets/HostContextWidget";
 
-type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | "size-change" | null;
+type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | "size-change" | "locale-timezone" | "host-context" | null;
 
 interface ToolInput {
   arguments: Record<string, unknown>;
@@ -54,6 +56,17 @@ export function AppComponent() {
   const [toolInput, setToolInput] = useState<ToolInput | null>(null);
   const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [hostContext, setHostContext] = useState<HostContext | null>(null);
+
+  // Debug: Log all incoming postMessages
+  useEffect(() => {
+    const debugHandler = (event: MessageEvent) => {
+      if (event.data?.method?.includes("host-context")) {
+        console.log("[App DEBUG] Raw postMessage received:", event.data);
+      }
+    };
+    window.addEventListener("message", debugHandler);
+    return () => window.removeEventListener("message", debugHandler);
+  }, []);
 
   // Create and connect App manually with autoResize disabled
   useEffect(() => {
@@ -81,6 +94,7 @@ export function AppComponent() {
         });
 
         myApp.setNotificationHandler(McpUiHostContextChangedNotificationSchema, (n) => {
+          console.log("[App] Received host-context-changed:", n);
           setHostContext((prev) => ({ ...prev, ...n.params }));
         });
 
@@ -166,6 +180,12 @@ export function AppComponent() {
       )}
       {widgetType === "size-change" && (
         <SizeChangeWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
+      )}
+      {widgetType === "locale-timezone" && (
+        <LocaleTimezoneWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
+      )}
+      {widgetType === "host-context" && (
+        <HostContextWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
     </div>
   );
