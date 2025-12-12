@@ -33,27 +33,7 @@ const CSP_PERMISSIVE_CONFIG = {
 // Session management
 const transports = new Map<string, StreamableHTTPServerTransport>();
 
-// Tips data for demo
-const tips = [
-  {
-    id: "what-is-mcp",
-    title: "What is MCP?",
-    content: "Model Context Protocol (MCP) is an open protocol that enables seamless integration between AI applications and external data sources. It provides a standardized way for AI models to access tools, resources, and prompts.",
-    emoji: "🔌",
-  },
-  {
-    id: "what-are-apps",
-    title: "What are MCP Apps?",
-    content: "MCP Apps (SEP-1865) extend MCP to deliver rich, interactive user interfaces. They enable servers to embed HTML widgets in tool responses, creating dynamic experiences beyond plain text.",
-    emoji: "✨",
-  },
-  {
-    id: "how-resources-work",
-    title: "How do Resources work?",
-    content: "Resources in MCP are identified by URIs. Widgets can read resources using the resources/read API, enabling dynamic data fetching from the server. This tip was loaded using that exact API!",
-    emoji: "📚",
-  },
-];
+
 
 function createServer() {
   const server = new McpServer({ name: "mcp-apps-everything", version: "0.0.1" });
@@ -104,31 +84,26 @@ function createServer() {
     contents: [{ uri: "ui://counter", mimeType: "text/html+mcp", text: getWidgetHtml() }],
   }));
 
-  // =====================================
-  // DATA RESOURCES (tips:// scheme)
-  // =====================================
 
-  // Individual tip resources
-  for (const tip of tips) {
-    server.resource(
-      `tip-${tip.id}`,
-      `tips://${tip.id}`,
-      { mimeType: "application/json" },
-      async () => ({
-        contents: [
-          {
-            uri: `tips://${tip.id}`,
-            mimeType: "application/json",
-            text: JSON.stringify(tip),
-          },
-        ],
-      })
-    );
-  }
 
   // =====================================
   // TOOLS WITH UI (use registerTool for _meta)
   // =====================================
+
+  // Dashboard Widget - Shows navigation dashboard
+  server.registerTool(
+    "dashboard",
+    {
+      title: "Dashboard",
+      description: "Shows the dashboard with all available widgets",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [{ type: "text", text: "Dashboard loaded. Select a widget to explore." }],
+      structuredContent: { _widget: "dashboard" },
+    })
+  );
 
   // Tool Call Widget - Demonstrates tools/call
   server.registerTool(
@@ -157,64 +132,22 @@ function createServer() {
     "open-link",
     {
       title: "Open Link Demo",
-      description: "Weather widget that demonstrates the ui/open-link API for opening external URLs",
-      inputSchema: {
-        location: z.string().default("San Francisco").describe("Location to show weather for"),
-        temperature: z.number().optional().describe("Temperature in Celsius"),
-        condition: z
-          .enum(["sunny", "cloudy", "rainy", "snowy", "stormy", "windy"])
-          .optional()
-          .describe("Weather condition"),
-        humidity: z.number().optional().describe("Humidity percentage"),
-        wind: z.number().optional().describe("Wind speed in km/h"),
-      },
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
-    },
-    async ({ location, temperature, condition, humidity, wind }): Promise<CallToolResult> => {
-      const weatherData = {
-        location,
-        temperature: temperature ?? Math.floor(Math.random() * 30) + 5,
-        condition: condition ?? ["sunny", "cloudy", "rainy"][Math.floor(Math.random() * 3)],
-        humidity: humidity ?? Math.floor(Math.random() * 60) + 30,
-        wind: wind ?? Math.floor(Math.random() * 30) + 5,
-      };
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Weather for ${location}: ${weatherData.temperature}°C, ${weatherData.condition}. Click links to open external services.`,
-          },
-        ],
-        structuredContent: { _widget: "open-link", ...weatherData },
-      };
-    }
-  );
-
-  // Read Resource Widget - Demonstrates resources/read
-  server.registerTool(
-    "read-resource",
-    {
-      title: "Read Resource Demo",
-      description: "Demonstrates the resources/read API for reading MCP resources",
+      description: "Shows a list of MCP-related resources that demonstrates the ui/open-link API",
       inputSchema: {},
       _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
     },
-    async (): Promise<CallToolResult> => {
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Ready to read resources. Click a topic to fetch it via resources/read.`,
-          },
-        ],
-        structuredContent: { 
-          _widget: "read-resource", 
-          availableTips: tips.map(t => ({ id: t.id, title: t.title, emoji: t.emoji }))
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: "MCP Resources loaded. Click any link to open it in your browser.",
         },
-      };
-    }
+      ],
+      structuredContent: { _widget: "open-link" },
+    })
   );
+
+
 
   // Message Widget - Demonstrates ui/message
   server.registerTool(
@@ -288,12 +221,12 @@ function createServer() {
     }
   );
 
-  // Size Change Widget - Demonstrates ui/size-change
+  // Size Change Widget - Demonstrates ui/notifications/size-change
   server.registerTool(
     "size-change",
     {
       title: "Size Change Demo",
-      description: "Interactive widget that demonstrates the ui/size-change API for dynamically changing widget height",
+      description: "Interactive widget that demonstrates the ui/notifications/size-change API for dynamically changing widget height",
       inputSchema: {
         height: z.number().default(300).describe("Initial height in pixels"),
       },
@@ -387,19 +320,18 @@ app.listen(PORT, () => {
 ║  Endpoint: http://localhost:${PORT}/mcp                          ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Tools with UI:                                               ║
+║    • dashboard      - Navigation dashboard                    ║
 ║    • tool-call      - tools/call demo                         ║
 ║    • open-link      - ui/open-link demo                       ║
-║    • read-resource  - resources/read demo                     ║
 ║    • message        - ui/message demo                         ║
 ║    • csp-test       - CSP enforcement demo                    ║
-║    • size-change    - ui/size-change demo                     ║
+║    • size-change    - ui/notifications/size-change demo       ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Utility Tools:                                               ║
 ║    • increment     - Counter increment                        ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Resources:                                                   ║
 ║    • ui://main     - Widget HTML                              ║
-║    • tips://{id}   - Tips about MCP                           ║
 ╚═══════════════════════════════════════════════════════════════╝
   `);
 });

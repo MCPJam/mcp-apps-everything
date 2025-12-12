@@ -9,13 +9,13 @@
  * - ui/open-link: Open Link Widget
  * - resources/read: Read Resource Widget
  * - ui/message: Message Widget
- * - ui/size-change: Size Change Widget
+ * - ui/notifications/size-change: Size Change Widget
  */
 
 import { useEffect, useState } from "react";
 import {
+  useApp,
   App,
-  PostMessageTransport,
   McpUiToolInputNotificationSchema,
   McpUiToolResultNotificationSchema,
   McpUiHostContextChangedNotificationSchema,
@@ -23,12 +23,13 @@ import {
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { ToolCallWidget } from "./widgets/ToolCallWidget";
 import { OpenLinkWidget } from "./widgets/OpenLinkWidget";
-import { ReadResourceWidget } from "./widgets/ReadResourceWidget";
 import { MessageWidget } from "./widgets/MessageWidget";
 import { CspTestWidget } from "./widgets/CspTestWidget";
 import { SizeChangeWidget } from "./widgets/SizeChangeWidget";
+import { Dashboard } from "./widgets/Dashboard";
+import { Navbar } from "./components/Navbar";
 
-type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | "size-change" | null;
+export type WidgetType = "tool-call" | "open-link" | "message" | "csp-test" | "size-change" | "dashboard" | null;
 
 interface ToolInput {
   arguments: Record<string, unknown>;
@@ -45,65 +46,37 @@ interface HostContext {
 }
 
 export function AppComponent() {
-  // App connection state
-  const [app, setApp] = useState<App | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
   // Local state for notifications
   const [toolInput, setToolInput] = useState<ToolInput | null>(null);
   const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [hostContext, setHostContext] = useState<HostContext | null>(null);
+  
+  // Navigation state
+  const [currentView, setCurrentView] = useState<WidgetType | null>(null);
 
-  // Create and connect App manually with autoResize disabled
-  useEffect(() => {
-    let mounted = true;
+  // Use the SDK directly
+  const { app, isConnected, error } = useApp({
+    appInfo: { name: "mcp-apps-everything", version: "0.0.1" },
+    capabilities: {},
+    onAppCreated: (app: App) => {
+      // Register notification handlers before connection
+      app.setNotificationHandler(McpUiToolInputNotificationSchema, (n) => {
+        setToolInput({ arguments: n.params.arguments ?? {} });
+      });
 
-    async function connect() {
-      try {
-        const myApp = new App(
-          { name: "mcp-apps-everything", version: "0.0.1" },
-          {}, // capabilities
-          { autoResize: false }
-        );
-
-        // Register notification handlers BEFORE connecting
-        myApp.setNotificationHandler(McpUiToolInputNotificationSchema, (n) => {
-          setToolInput({ arguments: n.params.arguments ?? {} });
+      app.setNotificationHandler(McpUiToolResultNotificationSchema, (n) => {
+        setToolResult({
+          content: n.params.content,
+          structuredContent: n.params.structuredContent,
+          isError: n.params.isError,
         });
+      });
 
-        myApp.setNotificationHandler(McpUiToolResultNotificationSchema, (n) => {
-          setToolResult({
-            content: n.params.content,
-            structuredContent: n.params.structuredContent,
-            isError: n.params.isError,
-          });
-        });
-
-        myApp.setNotificationHandler(McpUiHostContextChangedNotificationSchema, (n) => {
-          setHostContext((prev) => ({ ...prev, ...n.params }));
-        });
-
-        const transport = new PostMessageTransport(window.parent);
-        await myApp.connect(transport);
-
-        if (mounted) {
-          setApp(myApp);
-          setIsConnected(true);
-        }
-      } catch (err) {
-        if (mounted) {
-          setError(err instanceof Error ? err : new Error("Failed to connect"));
-        }
-      }
-    }
-
-    connect();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+      app.setNotificationHandler(McpUiHostContextChangedNotificationSchema, (n) => {
+        setHostContext((prev) => ({ ...prev, ...n.params }));
+      });
+    },
+  });
 
   const isDark = hostContext?.theme === "dark";
 
@@ -119,6 +92,9 @@ export function AppComponent() {
   // Detect widget type from structuredContent._widget
   const widgetType: WidgetType =
     (toolResult?.structuredContent?._widget as WidgetType) || null;
+
+  // Determine what to render
+  const renderView = currentView || widgetType;
 
   // Loading state or error
   if (!isConnected) {
@@ -141,7 +117,7 @@ export function AppComponent() {
   }
 
   // No widget detected
-  if (!widgetType) {
+  if (!renderView) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-muted-foreground">Waiting for tool result...</div>
@@ -149,22 +125,33 @@ export function AppComponent() {
     );
   }
 
+  // Dashboard view
+  if (renderView === "dashboard") {
+    return <Dashboard onNavigate={setCurrentView} />;
+  }
+
   return (
-    <div>
-      {widgetType === "tool-call" && (
+    <div className="relative">
+      {/* Show navbar when navigating from dashboard */}
+      {currentView && (
+        <Navbar 
+          app={app!}
+          onBack={() => setCurrentView(null)} 
+        />
+      )}
+      
+      {renderView === "tool-call" && (
         <ToolCallWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
-      {widgetType === "open-link" && (
+      {renderView === "open-link" && (
         <OpenLinkWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
-      {widgetType === "read-resource" && (
-        <ReadResourceWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
-      )}
-      {widgetType === "message" && <MessageWidget app={app!} />}
-      {widgetType === "csp-test" && (
+
+      {renderView === "message" && <MessageWidget app={app!} />}
+      {renderView === "csp-test" && (
         <CspTestWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
-      {widgetType === "size-change" && (
+      {renderView === "size-change" && (
         <SizeChangeWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
     </div>

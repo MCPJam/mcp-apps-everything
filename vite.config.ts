@@ -11,6 +11,9 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./widget"),
     },
   },
+  server: {
+    port: 5874,
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,

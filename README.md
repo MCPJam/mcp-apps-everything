@@ -80,7 +80,7 @@ npm run dev     # Run server + vite dev (hot reload)
 | Method | Description |
 |--------|-------------|
 | `ui/notifications/initialized` | Widget is fully initialized |
-| `ui/size-change` | Widget requests a size change |
+| `ui/notifications/size-change` | Widget requests a size change |
 
 ### Host → Widget Notifications
 
