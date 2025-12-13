@@ -81,10 +81,10 @@ function createServer() {
   // =====================================
 
   // Main widget with STRICT CSP (blocks all external requests)
-  server.resource("main-widget", "ui://main", { mimeType: "text/html+mcp" }, async () => ({
+  server.resource("main-widget", "ui://main", { mimeType: "text/html;profile=mcp-app" }, async () => ({
     contents: [{
       uri: "ui://main",
-      mimeType: "text/html+mcp",
+      mimeType: "text/html;profile=mcp-app",
       text: getWidgetHtml(),
       _meta: {
         ui: {
@@ -95,10 +95,10 @@ function createServer() {
   }));
 
   // Widget with PERMISSIVE CSP (allows specific test domains)
-  server.resource("permissive-widget", "ui://main-permissive", { mimeType: "text/html+mcp" }, async () => ({
+  server.resource("permissive-widget", "ui://main-permissive", { mimeType: "text/html;profile=mcp-app" }, async () => ({
     contents: [{
       uri: "ui://main-permissive",
-      mimeType: "text/html+mcp",
+      mimeType: "text/html;profile=mcp-app",
       text: getWidgetHtml(),
       _meta: {
         ui: {
@@ -108,9 +108,49 @@ function createServer() {
     }],
   }));
 
-  // Legacy counter resource for backwards compatibility
-  server.resource("counter-widget", "ui://counter", { mimeType: "text/html+mcp" }, async () => ({
-    contents: [{ uri: "ui://counter", mimeType: "text/html+mcp", text: getWidgetHtml() }],
+  // Counter widget (SEP-1865 compliant)
+  server.resource("counter-widget", "ui://counter", { mimeType: "text/html;profile=mcp-app" }, async () => ({
+    contents: [{ uri: "ui://counter", mimeType: "text/html;profile=mcp-app", text: getWidgetHtml() }],
+  }));
+
+  // =====================================
+  // MIME TYPE TEST RESOURCES (SEP-1865)
+  // =====================================
+
+  // Correct MIME type: text/html;profile=mcp-app
+  server.resource("mime-correct-widget", "ui://mime-correct", { mimeType: "text/html;profile=mcp-app" }, async () => ({
+    contents: [{
+      uri: "ui://mime-correct",
+      mimeType: "text/html;profile=mcp-app",
+      text: getWidgetHtml(),
+    }],
+  }));
+
+  // Missing MIME type (omitted entirely)
+  server.resource("mime-missing-widget", "ui://mime-missing", {}, async () => ({
+    contents: [{
+      uri: "ui://mime-missing",
+      // No mimeType specified - should trigger warning
+      text: getWidgetHtml(),
+    }],
+  }));
+
+  // Wrong MIME type: text/html (missing profile parameter)
+  server.resource("mime-wrong-html-widget", "ui://mime-wrong-html", { mimeType: "text/html" }, async () => ({
+    contents: [{
+      uri: "ui://mime-wrong-html",
+      mimeType: "text/html",
+      text: getWidgetHtml(),
+    }],
+  }));
+
+  // Wrong MIME type: text/html+mcp (legacy format, not SEP-1865 compliant)
+  server.resource("mime-wrong-legacy-widget", "ui://mime-wrong-legacy", { mimeType: "text/html+mcp" }, async () => ({
+    contents: [{
+      uri: "ui://mime-wrong-legacy",
+      mimeType: "text/html+mcp",
+      text: getWidgetHtml(),
+    }],
   }));
 
   // =====================================
@@ -360,6 +400,130 @@ function createServer() {
   );
 
   // =====================================
+  // MIME TYPE TEST TOOLS (SEP-1865)
+  // =====================================
+
+  // MIME Type Test - Correct (text/html;profile=mcp-app)
+  server.registerTool(
+    "mime-type-correct",
+    {
+      title: "MIME Type Test (Correct)",
+      description: "Tests SEP-1865 compliant MIME type: text/html;profile=mcp-app",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-correct" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `MIME Type test with CORRECT type: text/html;profile=mcp-app`,
+        },
+      ],
+      structuredContent: {
+        _widget: "mime-type-test",
+        mimeType: "text/html;profile=mcp-app",
+        testMode: "correct",
+      },
+    })
+  );
+
+  // MIME Type Test - Missing
+  server.registerTool(
+    "mime-type-missing",
+    {
+      title: "MIME Type Test (Missing)",
+      description: "Tests resource with NO mimeType specified - should show warning",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-missing" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `MIME Type test with MISSING mimeType - should trigger warning`,
+        },
+      ],
+      structuredContent: {
+        _widget: "mime-type-test",
+        mimeType: null,
+        testMode: "missing",
+      },
+    })
+  );
+
+  // MIME Type Test - Wrong (text/html)
+  server.registerTool(
+    "mime-type-wrong-html",
+    {
+      title: "MIME Type Test (text/html)",
+      description: "Tests resource with text/html (missing profile) - should show warning",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-wrong-html" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `MIME Type test with WRONG type: text/html (missing profile parameter)`,
+        },
+      ],
+      structuredContent: {
+        _widget: "mime-type-test",
+        mimeType: "text/html",
+        testMode: "wrong-html",
+      },
+    })
+  );
+
+  // MIME Type Test - Wrong (text/html+mcp - legacy format)
+  server.registerTool(
+    "mime-type-wrong-legacy",
+    {
+      title: "MIME Type Test (Legacy)",
+      description: "Tests resource with text/html+mcp (legacy format) - should show warning",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-wrong-legacy" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `MIME Type test with WRONG type: text/html+mcp (legacy format, not SEP-1865 compliant)`,
+        },
+      ],
+      structuredContent: {
+        _widget: "mime-type-test",
+        mimeType: "text/html+mcp",
+        testMode: "wrong-legacy",
+      },
+    })
+  );
+
+  // =====================================
+  // ROUTER TEST TOOL (BrowserRouter bug repro)
+  // =====================================
+
+  // Router Test Widget - Demonstrates BrowserRouter refresh bug
+  server.registerTool(
+    "router-test",
+    {
+      title: "Router Test (BrowserRouter Bug)",
+      description: "Demonstrates the BrowserRouter refresh bug in iframes. Navigate to a page and refresh to see the bug.",
+      inputSchema: {},
+      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `Router test widget. Navigate to Page 2 or Settings, then refresh the browser to reproduce the bug.`,
+        },
+      ],
+      structuredContent: { _widget: "router-test", timestamp: Date.now() },
+    })
+  );
+
+  // =====================================
   // UTILITY TOOLS (called by widgets)
   // =====================================
 
@@ -436,21 +600,29 @@ app.listen(PORT, () => {
 ║  Endpoint: http://localhost:${PORT}/mcp                          ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Tools with UI:                                               ║
-║    • tool-call       - tools/call demo                        ║
-║    • open-link       - ui/open-link demo                      ║
-║    • read-resource   - resources/read demo                    ║
-║    • message         - ui/message demo                        ║
-║    • csp-test        - CSP enforcement demo                   ║
-║    • size-change     - ui/size-change demo                    ║
-║    • locale-timezone - locale/timezone demo                   ║
-║    • host-context    - host context fields demo               ║
+║    • tool-call        - tools/call demo                       ║
+║    • open-link        - ui/open-link demo                     ║
+║    • read-resource    - resources/read demo                   ║
+║    • message          - ui/message demo                       ║
+║    • csp-test         - CSP enforcement demo                  ║
+║    • size-change      - ui/size-change demo                   ║
+║    • locale-timezone  - locale/timezone demo                  ║
+║    • host-context     - host context fields demo              ║
+║    • router-test      - BrowserRouter bug repro               ║
+╠═══════════════════════════════════════════════════════════════╣
+║  MIME Type Test Tools:                                        ║
+║    • mime-type-correct     - correct MIME type                ║
+║    • mime-type-missing     - missing MIME type                ║
+║    • mime-type-wrong-html  - wrong (text/html)                ║
+║    • mime-type-wrong-legacy- wrong (text/html+mcp)            ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Utility Tools:                                               ║
 ║    • increment     - Counter increment                        ║
 ╠═══════════════════════════════════════════════════════════════╣
 ║  Resources:                                                   ║
-║    • ui://main     - Widget HTML                              ║
-║    • tips://{id}   - Tips about MCP                           ║
+║    • ui://main           - Widget HTML                        ║
+║    • ui://mime-*         - MIME type test resources           ║
+║    • tips://{id}         - Tips about MCP                     ║
 ╚═══════════════════════════════════════════════════════════════╝
   `);
 });

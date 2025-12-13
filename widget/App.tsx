@@ -29,8 +29,10 @@ import { CspTestWidget } from "./widgets/CspTestWidget";
 import { SizeChangeWidget } from "./widgets/SizeChangeWidget";
 import { LocaleTimezoneWidget } from "./widgets/LocaleTimezoneWidget";
 import { HostContextWidget } from "./widgets/HostContextWidget";
+import { MimeTypeTestWidget } from "./widgets/MimeTypeTestWidget";
+import { RouterTestWidget } from "./widgets/RouterTestWidget";
 
-type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | "size-change" | "locale-timezone" | "host-context" | null;
+type WidgetType = "tool-call" | "open-link" | "read-resource" | "message" | "csp-test" | "size-change" | "locale-timezone" | "host-context" | "mime-type-test" | "router-test" | null;
 
 interface ToolInput {
   arguments: Record<string, unknown>;
@@ -56,17 +58,6 @@ export function AppComponent() {
   const [toolInput, setToolInput] = useState<ToolInput | null>(null);
   const [toolResult, setToolResult] = useState<ToolResult | null>(null);
   const [hostContext, setHostContext] = useState<HostContext | null>(null);
-
-  // Debug: Log all incoming postMessages
-  useEffect(() => {
-    const debugHandler = (event: MessageEvent) => {
-      if (event.data?.method?.includes("host-context")) {
-        console.log("[App DEBUG] Raw postMessage received:", event.data);
-      }
-    };
-    window.addEventListener("message", debugHandler);
-    return () => window.removeEventListener("message", debugHandler);
-  }, []);
 
   // Create and connect App manually with autoResize disabled
   useEffect(() => {
@@ -186,6 +177,12 @@ export function AppComponent() {
       )}
       {widgetType === "host-context" && (
         <HostContextWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
+      )}
+      {widgetType === "mime-type-test" && (
+        <MimeTypeTestWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
+      )}
+      {widgetType === "router-test" && (
+        <RouterTestWidget app={app!} toolInput={toolInput} toolResult={toolResult} />
       )}
     </div>
   );
