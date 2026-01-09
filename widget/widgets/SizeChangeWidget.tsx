@@ -24,7 +24,7 @@ export function SizeChangeWidget({ app, toolInput, toolResult }: SizeChangeWidge
 
   // Send initial size on mount
   useEffect(() => {
-    app.sendSizeChange({ height: 300 });
+    app.sendSizeChanged({ height: 300 });
   }, [app]);
 
   useEffect(() => {
@@ -32,7 +32,7 @@ export function SizeChangeWidget({ app, toolInput, toolResult }: SizeChangeWidge
       const inputHeight = toolInput.arguments.height as number;
       const clampedHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, inputHeight));
       setHeight(clampedHeight);
-      app.sendSizeChange({ height: clampedHeight });
+      app.sendSizeChanged({ height: clampedHeight });
     }
   }, [toolInput, app]);
 
@@ -41,7 +41,7 @@ export function SizeChangeWidget({ app, toolInput, toolResult }: SizeChangeWidge
       const resultHeight = toolResult.structuredContent.height as number;
       const clampedHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, resultHeight));
       setHeight(clampedHeight);
-      app.sendSizeChange({ height: clampedHeight });
+      app.sendSizeChanged({ height: clampedHeight });
     }
   }, [toolResult, app]);
 
@@ -54,7 +54,7 @@ export function SizeChangeWidget({ app, toolInput, toolResult }: SizeChangeWidge
     setLoading(true);
     try {
       // Send size change notification to host
-      app.sendSizeChange({ height: clampedHeight });
+      app.sendSizeChanged({ height: clampedHeight });
       const change = clampedHeight - height;
       setHeight(clampedHeight);
       setLastChange(change);

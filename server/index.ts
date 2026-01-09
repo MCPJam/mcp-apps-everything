@@ -11,8 +11,8 @@ import { fileURLToPath } from "url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 4001;
 
-// Resource URI meta key per SEP-1865
-const RESOURCE_URI_META_KEY = "ui/resourceUri";
+// Resource URI uses nested _meta.ui.resourceUri per SEP-1865
+// (The flat "ui/resourceUri" format is deprecated)
 
 // CSP configurations for CSP test widget (SEP-1865)
 
@@ -188,7 +188,7 @@ function createServer() {
       inputSchema: {
         count: z.number().default(0).describe("Initial count value"),
       },
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async ({ count }): Promise<CallToolResult> => ({
       content: [
@@ -217,7 +217,7 @@ function createServer() {
         humidity: z.number().optional().describe("Humidity percentage"),
         wind: z.number().optional().describe("Wind speed in km/h"),
       },
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async ({ location, temperature, condition, humidity, wind }): Promise<CallToolResult> => {
       const weatherData = {
@@ -247,7 +247,7 @@ function createServer() {
       title: "Read Resource Demo",
       description: "Demonstrates the resources/read API for reading MCP resources",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async (): Promise<CallToolResult> => {
       return {
@@ -272,7 +272,7 @@ function createServer() {
       title: "Message Demo",
       description: "Demonstrates the ui/message API for sending messages to the chat",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -292,7 +292,7 @@ function createServer() {
       title: "CSP Test (Strict)",
       description: "Tests STRICT CSP - external scripts (esm.sh, jsdelivr, unpkg), fetch, and images should be BLOCKED",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async (): Promise<CallToolResult> => {
       return {
@@ -318,7 +318,7 @@ function createServer() {
       title: "CSP Test (Permissive)",
       description: "Tests PERMISSIVE CSP - external scripts (esm.sh, jsdelivr, unpkg), fetch, and images should be ALLOWED",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main-permissive" },
+      _meta: { ui: { resourceUri: "ui://main-permissive" } },
     },
     async (): Promise<CallToolResult> => {
       return {
@@ -346,7 +346,7 @@ function createServer() {
       inputSchema: {
         height: z.number().default(300).describe("Initial height in pixels"),
       },
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async ({ height }): Promise<CallToolResult> => ({
       content: [
@@ -366,7 +366,7 @@ function createServer() {
       title: "Locale & Timezone Demo",
       description: "Tests locale and timezone support from host context. Displays current locale/timezone and formats dates, times, and numbers accordingly.",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -386,7 +386,7 @@ function createServer() {
       title: "Host Context Demo",
       description: "Comprehensive display of ALL host context fields (theme, locale, timeZone, displayMode, viewport, platform, etc.). Reacts to changes in real-time.",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -410,7 +410,7 @@ function createServer() {
       title: "MIME Type Test (Correct)",
       description: "Tests SEP-1865 compliant MIME type: text/html;profile=mcp-app",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-correct" },
+      _meta: { ui: { resourceUri: "ui://mime-correct" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -434,7 +434,7 @@ function createServer() {
       title: "MIME Type Test (Missing)",
       description: "Tests resource with NO mimeType specified - should show warning",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-missing" },
+      _meta: { ui: { resourceUri: "ui://mime-missing" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -458,7 +458,7 @@ function createServer() {
       title: "MIME Type Test (text/html)",
       description: "Tests resource with text/html (missing profile) - should show warning",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-wrong-html" },
+      _meta: { ui: { resourceUri: "ui://mime-wrong-html" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -482,7 +482,7 @@ function createServer() {
       title: "MIME Type Test (Legacy)",
       description: "Tests resource with text/html+mcp (legacy format) - should show warning",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://mime-wrong-legacy" },
+      _meta: { ui: { resourceUri: "ui://mime-wrong-legacy" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -510,7 +510,7 @@ function createServer() {
       title: "Router Test (BrowserRouter Bug)",
       description: "Demonstrates the BrowserRouter refresh bug in iframes. Navigate to a page and refresh to see the bug.",
       inputSchema: {},
-      _meta: { [RESOURCE_URI_META_KEY]: "ui://main" },
+      _meta: { ui: { resourceUri: "ui://main" } },
     },
     async (): Promise<CallToolResult> => ({
       content: [
@@ -520,6 +520,120 @@ function createServer() {
         },
       ],
       structuredContent: { _widget: "router-test", timestamp: Date.now() },
+    })
+  );
+
+  // =====================================
+  // SEP-1865 COMPLIANCE TEST TOOLS
+  // =====================================
+
+  // Partial Input Streaming Test - Tests ui/notifications/tool-input-partial
+  server.registerTool(
+    "partial-input-test",
+    {
+      title: "Partial Input Streaming Test",
+      description: "Tests ui/notifications/tool-input-partial streaming from host to widget. Widget displays partial inputs as they stream.",
+      inputSchema: {
+        query: z.string().describe("A query string to process (longer queries show more streaming)"),
+        options: z.object({
+          limit: z.number().optional().describe("Optional result limit"),
+          format: z.enum(["json", "text"]).optional().describe("Output format"),
+        }).optional().describe("Optional processing options"),
+      },
+      _meta: { ui: { resourceUri: "ui://main" } },
+    },
+    async ({ query, options }): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `Processed query: "${query}" with options: ${JSON.stringify(options ?? {})}`,
+        },
+      ],
+      structuredContent: {
+        _widget: "partial-input-test",
+        query,
+        options,
+        timestamp: Date.now(),
+      },
+    })
+  );
+
+  // Tool Cancellation Test - Tests ui/notifications/tool-cancelled
+  server.registerTool(
+    "cancellation-test",
+    {
+      title: "Tool Cancellation Test",
+      description: "Tests ui/notifications/tool-cancelled handling. Simulates a long-running operation that can be cancelled.",
+      inputSchema: {
+        duration: z.number().default(10000).describe("Simulated operation duration in milliseconds"),
+      },
+      _meta: { ui: { resourceUri: "ui://main" } },
+    },
+    async ({ duration }): Promise<CallToolResult> => {
+      // Simulate long-running operation
+      await new Promise((resolve) => setTimeout(resolve, duration));
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Operation completed after ${duration}ms`,
+          },
+        ],
+        structuredContent: {
+          _widget: "cancellation-test",
+          duration,
+          completedAt: Date.now(),
+        },
+      };
+    }
+  );
+
+  // CSS Variables Theming Test - Tests styles.variables from hostContext
+  server.registerTool(
+    "theming-test",
+    {
+      title: "CSS Variables Theming Test",
+      description: "Tests styles.variables from hostContext (SEP-1865). Displays all CSS variables received from the host and shows a live preview.",
+      inputSchema: {},
+      _meta: { ui: { resourceUri: "ui://main" } },
+    },
+    async (): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: "CSS Variables Theming test widget. Displays host CSS variables and reacts to theme changes.",
+        },
+      ],
+      structuredContent: {
+        _widget: "theming-test",
+        timestamp: Date.now(),
+      },
+    })
+  );
+
+  // Interactive Cancellation Test - Widget-initiated tool calls with AbortController cancellation
+  server.registerTool(
+    "interactive-cancellation",
+    {
+      title: "Interactive Cancellation Test",
+      description: "Widget that initiates tool calls and can cancel them using AbortController. Click Start to call a long-running tool, then Cancel to abort it.",
+      inputSchema: {
+        duration: z.number().default(5000).describe("Duration for the cancellation-test tool call in milliseconds"),
+      },
+      _meta: { ui: { resourceUri: "ui://main" } },
+    },
+    async ({ duration }): Promise<CallToolResult> => ({
+      content: [
+        {
+          type: "text",
+          text: `Interactive cancellation widget ready. Will call cancellation-test with ${duration}ms duration when started.`,
+        },
+      ],
+      structuredContent: {
+        _widget: "interactive-cancellation",
+        duration,
+        timestamp: Date.now(),
+      },
     })
   );
 

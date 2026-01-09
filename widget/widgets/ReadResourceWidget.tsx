@@ -42,7 +42,7 @@ export function ReadResourceWidget({ app, toolResult }: ReadResourceWidgetProps)
 
     try {
       // Read the resource directly via the SDK
-      const result = await app.readServerResource({ uri: `tips://${resourceId}` });
+      const result = await (app as any).readServerResource({ uri: `tips://${resourceId}` });
       const textContent = result?.contents?.[0]?.text;
 
       if (textContent) {
